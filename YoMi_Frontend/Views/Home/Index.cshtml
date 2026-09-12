@@ -1,0 +1,96 @@
+@model HomePageViewModel
+@{
+    ViewData["Title"] = "首頁";
+    var announcement = Model.Get("announcement");
+    var siteName = Model.Get("site_name", "悠咪電競");
+    var siteSubtitle = Model.Get("site_subtitle", "YUMI ESPORTS");
+    var description = Model.Get("site_description", "專業三角洲陪玩平台，給予最專業的服務及實力。護航、趣味單、代儲等多元服務，累積消費解鎖 VIP 等級，享受專屬折扣與尊榮福利。");
+}
+
+@if (!string.IsNullOrWhiteSpace(announcement))
+{
+    <aside class="announcement" data-dismissible>
+        <div class="container"><strong>公告</strong><span>@announcement</span><button type="button" aria-label="關閉公告">×</button></div>
+    </aside>
+}
+
+<section class="hero">
+    <div class="hero-grid" aria-hidden="true"></div>
+    <div class="container hero-layout">
+        <div class="hero-copy">
+            <p class="eyebrow">PROFESSIONAL ESPORTS PLATFORM</p>
+            <h1><span>追求</span><strong>極致</strong><em>ESPORTS</em></h1>
+            <p class="hero-description">@description</p>
+            <div class="hero-actions">
+                <a class="primary-button" href="/price">查看價目表 <span aria-hidden="true">→</span></a>
+                <a class="secondary-button" href="/vip">VIP 等級說明</a>
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                    <a class="pink-button" href="/account">登入 / 註冊會員</a>
+                }
+            </div>
+            <ul class="trust-list" aria-label="服務特色">
+                <li>專業陪玩平台</li><li>帳號安全保障</li><li>多元服務項目</li>
+            </ul>
+        </div>
+
+        <aside class="brand-panel" aria-label="品牌資訊">
+            <span class="panel-label">YUMI CLUB</span>
+            <img class="hero-logo" src="@(ViewData["LogoUrl"])" alt="悠咪電競 Logo" />
+            <h2>@siteName</h2>
+            <p>@siteSubtitle</p>
+            <div class="preview-stats">
+                <div><strong>5 階</strong><span>VIP 等級</span></div>
+                <div><strong>85 折</strong><span>壽星優惠</span></div>
+                <div><strong>9 折</strong><span>至尊折扣</span></div>
+                <div><strong>多元</strong><span>服務項目</span></div>
+            </div>
+        </aside>
+    </div>
+</section>
+
+<section class="service-strip" aria-label="服務項目">
+    <div class="container service-list">
+        <span>護航服務</span><span>趣味單</span><span>代儲值</span><span>陪玩服務</span><span>代打代練</span><span>VIP 福利</span>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="container">
+        <div class="section-heading"><p class="eyebrow">VIP SYSTEM</p><h2>VIP 等級一覽</h2><p>累積消費自動升級，享受更多專屬折扣與尊榮福利。</p></div>
+        <div class="vip-card-grid">
+            @foreach (var tier in VipRules.Tiers)
+            {
+                <article class="vip-mini-card @tier.CssClass">
+                    <span class="vip-icon">@tier.Icon</span><h3>@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong>@tier.DiscountLabel</strong>
+                </article>
+            }
+        </div>
+        <div class="center"><a class="secondary-button" href="/vip">查看完整 VIP 福利 →</a></div>
+    </div>
+</section>
+
+<section class="content-section feature-section">
+    <div class="container">
+        <div class="section-heading"><p class="eyebrow">WHY YUMI</p><h2>專業服務，安心遊戲</h2></div>
+        <div class="feature-grid">
+            <article><span>⚡</span><h3>快速組合</h3><p>依照需求快速安排適合的服務人員與時段。</p></article>
+            <article><span>🛡</span><h3>安全保障</h3><p>重視帳號與個人資料安全，提供安心服務流程。</p></article>
+            <article><span>👑</span><h3>VIP 尊享</h3><p>累積消費自動升級，解鎖折扣與專屬福利。</p></article>
+            <article><span>🏆</span><h3>精英服務</h3><p>專業團隊與多元方案，滿足不同遊戲需求。</p></article>
+        </div>
+    </div>
+</section>
+
+<section class="contact-section">
+    <div class="container contact-card">
+        <div><p class="eyebrow">CONTACT US</p><h2>準備好開始了嗎？</h2><p>加入社群，直接洽詢服務內容與最新方案。</p></div>
+        <div class="contact-actions">
+            <a class="primary-button" href="@Model.Get("contact_discord", "https://discord.gg/yummi-esports-club")" target="_blank" rel="noopener">Discord 社群</a>
+            @if (!string.IsNullOrWhiteSpace(Model.Get("contact_line")))
+            {
+                <a class="secondary-button" href="@Model.Get("contact_line")" target="_blank" rel="noopener">LINE 聯絡</a>
+            }
+        </div>
+    </div>
+</section>

@@ -1,0 +1,14 @@
+@model int
+@{
+    var isNotFound = Model == 404;
+    ViewData["Title"] = isNotFound ? "找不到頁面" : $"HTTP {Model}";
+}
+
+<section class="coming-soon">
+    <div class="coming-soon-card">
+        <p class="eyebrow">ERROR @Model</p>
+        <h1>@(isNotFound ? "找不到這個頁面" : "無法顯示頁面")</h1>
+        <p>@(isNotFound ? "網址可能已變更，或頁面不存在。" : "請稍後再試，或返回首頁。")</p>
+        <a class="primary-button" href="/">返回首頁</a>
+    </div>
+</section>

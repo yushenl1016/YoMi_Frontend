@@ -1,0 +1,17 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = "發生錯誤";
+}
+
+<section class="coming-soon">
+    <div class="coming-soon-card">
+        <p class="eyebrow">SYSTEM ERROR</p>
+        <h1>暫時無法顯示頁面</h1>
+        <p>請稍後再試。</p>
+        @if (Model.ShowRequestId)
+        {
+            <p class="request-id">Request ID: <code>@Model.RequestId</code></p>
+        }
+        <a class="primary-button" href="/">返回首頁</a>
+    </div>
+</section>

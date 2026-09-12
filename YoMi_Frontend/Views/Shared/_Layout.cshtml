@@ -1,0 +1,126 @@
+@using YoMi_Frontend.Services
+@inject PortalService Portal
+@{
+    SiteChromeViewModel chrome;
+    try
+    {
+        chrome = await Portal.GetSiteChromeAsync();
+    }
+    catch
+    {
+        chrome = new SiteChromeViewModel();
+    }
+    var applicationName = chrome.Get("site_name", "悠咪電競");
+    var logoUrl = ViewData["LogoUrl"] as string;
+    var path = Context.Request.Path.Value ?? "/";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    string Active(string route) => string.Equals(path, route, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty;
+}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d0d1a" />
+    <meta name="description" content="@chrome.Get("site_description", "悠咪電競專業服務平台")" />
+    <title>@ViewData["Title"] - @applicationName</title>
+    <link rel="icon" href="@logoUrl" type="image/gif" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    @if (chrome.Background != null)
+    {
+        <div class="site-background" aria-hidden="true">
+            @if (chrome.Background.MimeType.StartsWith("embed/"))
+            {
+                <iframe src="@chrome.Background.FileUrl" title="網站動態背景" tabindex="-1" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            }
+            else if (chrome.Background.MimeType.StartsWith("video/"))
+            {
+                <video autoplay muted loop playsinline data-background-video><source src="@chrome.Background.FileUrl" type="@chrome.Background.MimeType" /></video>
+            }
+            else
+            {
+                <img src="@chrome.Background.FileUrl" alt="" />
+            }
+            <div class="background-shade"></div>
+        </div>
+    }
+
+    <header class="site-header">
+        <div class="neon-line"></div>
+        <div class="container header-inner">
+            <a class="brand" href="/" aria-label="@applicationName 首頁">
+                <img class="brand-mark" src="@logoUrl" alt="" />
+                <span>@applicationName</span>
+            </a>
+
+            <nav class="desktop-nav" aria-label="主要導覽">
+                <a class="@Active("/")" href="/">首頁</a>
+                <a class="@Active("/price")" href="/price">價目表</a>
+                <a class="@Active("/vip")" href="/vip">VIP 等級</a>
+                <a class="@Active("/my-records")" href="/my-records">我的消費</a>
+                <a href="@chrome.Get("scoreboard_url", "https://yumi-live-score-board.manus.space/")" target="_blank" rel="noopener">♜ 小小巨人</a>
+            </nav>
+
+            <div class="header-actions">
+                @if (chrome.Background?.MimeType.StartsWith("video/") == true)
+                {
+                    <button class="sound-button" type="button" data-sound-toggle aria-label="切換背景音效">♫</button>
+                }
+                @if (isAuthenticated)
+                {
+                    @if (User.IsInRole("admin"))
+                    {
+                        <a class="admin-link" href="/admin">管理後台</a>
+                    }
+                    <span class="member-name">@User.Identity.Name</span>
+                    <form class="inline-form" action="/account/logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button class="text-button" type="submit">登出</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="login-button" href="/email-auth">登入 / 註冊</a>
+                }
+            </div>
+
+            <details class="mobile-nav">
+                <summary aria-label="開啟導覽選單">選單</summary>
+                <nav aria-label="行動版導覽">
+                    <a href="/">首頁</a>
+                    <a href="/price">價目表</a>
+                    <a href="/vip">VIP 等級</a>
+                    <a href="/my-records">我的消費</a>
+                    @if (User.IsInRole("admin")) { <a href="/admin">管理後台</a> }
+                    @if (!isAuthenticated) { <a href="/email-auth">登入 / 註冊</a> }
+                </nav>
+            </details>
+        </div>
+    </header>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="flash flash-success" role="status">@success</div>
+    }
+    @if (TempData["Error"] is string error)
+    {
+        <div class="flash flash-error" role="alert">@error</div>
+    }
+
+    <main class="site-main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <span class="footer-brand"><img class="footer-logo" src="@logoUrl" alt="" loading="lazy" />@applicationName · @chrome.Get("site_subtitle", "YUMI ESPORTS")</span>
+            <span>@chrome.Get("footer_text", $"© {DateTime.Now.Year} 悠咪電競 · 保留所有權利")</span>
+        </div>
+    </footer>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

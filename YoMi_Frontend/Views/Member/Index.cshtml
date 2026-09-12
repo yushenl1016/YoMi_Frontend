@@ -1,0 +1,43 @@
+@model RecordsPageViewModel
+@{
+    ViewData["Title"] = "我的消費";
+}
+
+<header class="page-hero"><div class="hero-grid"></div><div class="container"><p class="eyebrow">MY ACCOUNT</p><h1>我的消費紀錄</h1><p>查看累積消費、VIP 等級與每筆服務明細。</p></div></header>
+
+<section class="page-content">
+    <div class="container narrow">
+        <section class="profile-card">
+            <div class="profile-name"><span class="profile-avatar">@Model.Member.Name.Substring(0, 1).ToUpperInvariant()</span><div><p>@Model.Member.Email</p><h2>@Model.Member.Name</h2></div></div>
+            <form class="inline-edit" action="/my-records/name" method="post">
+                @Html.AntiForgeryToken()
+                <label for="member-name">顯示名稱</label><input id="member-name" name="name" value="@Model.Member.Name" maxlength="64" required /><button type="submit">更新</button>
+            </form>
+        </section>
+
+        <section class="member-status @Model.Status.Tier.CssClass">
+            <div><span class="vip-icon">@Model.Status.Tier.Icon</span><p>目前等級</p><h2>@Model.Status.Tier.Name</h2></div>
+            <div class="status-total"><span>累積消費</span><strong>NT$@Model.Status.Total.ToString("N0")</strong></div>
+            <div class="progress-block"><div class="progress-label"><span>升級進度</span>@if (Model.Status.NextThreshold.HasValue) { <span>尚差 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</span> } else { <span>已達最高等級</span> }</div><div class="progress-track"><span style="width:@Model.Status.Progress.ToString("0.##")%"></span></div></div>
+        </section>
+
+        <section class="records-card">
+            <header><h2>消費明細</h2><span class="tag">@Model.Records.Count 筆</span></header>
+            @if (Model.Records.Count == 0)
+            {
+                <div class="empty-state"><span>▤</span><p>尚無消費紀錄</p></div>
+            }
+            else
+            {
+                <div class="responsive-table">
+                    <table><thead><tr><th>日期</th><th>類別</th><th>說明</th><th class="number">金額</th></tr></thead><tbody>
+                    @foreach (var record in Model.Records)
+                    {
+                        <tr><td>@record.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td><td><span class="tag tag-cyan">@record.Category</span></td><td>@(record.Description ?? "—")</td><td class="number price-text">NT$@record.Amount.ToString("N0")</td></tr>
+                    }
+                    </tbody></table>
+                </div>
+            }
+        </section>
+    </div>
+</section>

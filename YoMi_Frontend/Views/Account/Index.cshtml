@@ -1,0 +1,63 @@
+@model AccountViewModel
+@{
+    ViewData["Title"] = "郵箱登入";
+    var register = ViewData["RegisterModel"] as RegisterViewModel ?? new RegisterViewModel { Email = Model.Email };
+    var step = ViewData["AuthStep"] as string ?? "email-check";
+}
+
+<section class="auth-page">
+    <div class="hero-grid"></div>
+    <div class="auth-shell" data-auth-shell data-step="@step">
+        <div class="auth-heading">
+            <img class="hero-logo small" src="@(ViewData["LogoUrl"])" alt="悠咪電競 Logo" />
+            <p class="eyebrow">MEMBER ACCESS</p>
+            <h1 data-auth-title>@(step == "password-login" ? "密碼登入" : step == "register" ? "創建帳號" : "郵箱登入")</h1>
+            <p data-auth-subtitle>@(step == "password-login" ? "輸入密碼登入" : step == "register" ? "設定用戶名稱和密碼" : "輸入你的郵箱開始")</p>
+        </div>
+
+        <div class="auth-panel @(step == "email-check" ? "is-active" : "")" data-auth-panel="email-check">
+            <form action="/account/check-email" method="post" data-email-check>
+                @Html.AntiForgeryToken()
+                <div class="validation-summary" data-email-error></div>
+                <label for="check-email">郵箱地址</label>
+                <input id="check-email" name="email" value="@Model.Email" maxlength="320" type="email" required autocomplete="email" placeholder="your@email.com" />
+                <button class="primary-button full-button" type="submit">繼續 →</button>
+            </form>
+        </div>
+
+        <div class="auth-panel @(step == "password-login" ? "is-active" : "")" data-auth-panel="password-login">
+            <form action="/account/login" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+                <input asp-for="ReturnUrl" type="hidden" />
+                <p class="selected-email">郵箱：<strong data-selected-email>@Model.Email</strong></p>
+                <input asp-for="Email" type="hidden" data-auth-email />
+                <label asp-for="Password">密碼</label>
+                <input asp-for="Password" maxlength="128" autocomplete="current-password" placeholder="輸入密碼" />
+                <span asp-validation-for="Password"></span>
+                <button class="primary-button full-button" type="submit">登入 →</button>
+                <button class="auth-back" type="button" data-auth-back>返回修改郵箱</button>
+            </form>
+        </div>
+
+        <div class="auth-panel @(step == "register" ? "is-active" : "")" data-auth-panel="register">
+            <form action="/account/register" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="validation-summary"></div>
+                <p class="selected-email">郵箱：<strong data-selected-email>@register.Email</strong></p>
+                <input name="Email" value="@register.Email" type="hidden" data-auth-email />
+                <label for="register-name">用戶名稱</label>
+                <input id="register-name" name="Name" value="@register.Name" maxlength="64" required autocomplete="name" placeholder="輸入用戶名稱" />
+                @Html.ValidationMessage("Name")
+                <label for="register-password">建立密碼</label>
+                <input id="register-password" name="Password" maxlength="128" minlength="8" type="password" required autocomplete="new-password" placeholder="至少 8 個字符" />
+                @Html.ValidationMessage("Password")
+                <label for="register-confirm">確認密碼</label>
+                <input id="register-confirm" name="ConfirmPassword" maxlength="128" minlength="8" type="password" required autocomplete="new-password" placeholder="再次輸入密碼" />
+                @Html.ValidationMessage("ConfirmPassword")
+                <button class="primary-button full-button" type="submit">創建帳號 →</button>
+                <button class="auth-back" type="button" data-auth-back>返回修改郵箱</button>
+            </form>
+        </div>
+    </div>
+</section>
