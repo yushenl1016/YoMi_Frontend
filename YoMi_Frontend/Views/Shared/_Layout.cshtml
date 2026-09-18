@@ -31,18 +31,20 @@
 <body>
     @if (chrome.Background != null)
     {
+        var backgroundUrl = chrome.Background.FileUrl.StartsWith("/uploads/backgrounds/", StringComparison.Ordinal)
+            ? Url.Content("~" + chrome.Background.FileUrl) : chrome.Background.FileUrl;
         <div class="site-background" aria-hidden="true">
             @if (chrome.Background.MimeType.StartsWith("embed/"))
             {
-                <iframe src="@chrome.Background.FileUrl" title="網站動態背景" tabindex="-1" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <iframe src="@backgroundUrl" title="網站動態背景" tabindex="-1" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
             }
             else if (chrome.Background.MimeType.StartsWith("video/"))
             {
-                <video autoplay muted loop playsinline data-background-video><source src="@chrome.Background.FileUrl" type="@chrome.Background.MimeType" /></video>
+                <video autoplay muted loop playsinline data-background-video><source src="@backgroundUrl" type="@chrome.Background.MimeType" /></video>
             }
             else
             {
-                <img src="@chrome.Background.FileUrl" alt="" />
+                <img src="@backgroundUrl" alt="" />
             }
             <div class="background-shade"></div>
         </div>

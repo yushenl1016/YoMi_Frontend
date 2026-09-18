@@ -1,20 +1,42 @@
 @model AccountViewModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
+@using Microsoft.Extensions.Hosting
 @{
-    ViewData["Title"] = "郵箱登入";
+    ViewData["Title"] = "會員登入";
     var register = ViewData["RegisterModel"] as RegisterViewModel ?? new RegisterViewModel { Email = Model.Email };
     var step = ViewData["AuthStep"] as string ?? "email-check";
 }
 
 <section class="auth-page">
     <div class="hero-grid"></div>
-    <div class="auth-shell" data-auth-shell data-step="@step">
+    <div class="auth-shell">
         <div class="auth-heading">
             <img class="hero-logo small" src="@(ViewData["LogoUrl"])" alt="悠咪電競 Logo" />
             <p class="eyebrow">MEMBER ACCESS</p>
-            <h1 data-auth-title>@(step == "password-login" ? "密碼登入" : step == "register" ? "創建帳號" : "郵箱登入")</h1>
-            <p data-auth-subtitle>@(step == "password-login" ? "輸入密碼登入" : step == "register" ? "設定用戶名稱和密碼" : "輸入你的郵箱開始")</p>
+            <h1>會員登入</h1>
+            <p>使用 Google 帳號登入；首次使用將自動建立會員。</p>
+            @if (Environment.IsDevelopment())
+            {
+                <p><a href="/account/google-test">Google 登入測試（查看 sub / email）</a></p>
+            }
         </div>
 
+        <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+        @if (ViewData["GoogleEnabled"] is true)
+        {
+            <form action="/account/google" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="ReturnUrl" type="hidden" />
+                <button class="primary-button full-button" type="submit">使用 Google 登入</button>
+            </form>
+            <p>原有會員請使用相同 Email 的 Google 帳號，以保留消費紀錄。</p>
+        }
+        else
+        {
+            <p role="alert">此環境尚未設定 Google 登入，請聯絡管理員。</p>
+        }
+
+        @* 原密碼登入／註冊 UI 保留但停用；後端端點亦已註解。
         <div class="auth-panel @(step == "email-check" ? "is-active" : "")" data-auth-panel="email-check">
             <form action="/account/check-email" method="post" data-email-check>
                 @Html.AntiForgeryToken()
@@ -59,5 +81,6 @@
                 <button class="auth-back" type="button" data-auth-back>返回修改郵箱</button>
             </form>
         </div>
+        *@
     </div>
 </section>

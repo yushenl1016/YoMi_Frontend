@@ -23,7 +23,8 @@ namespace YoMi_Frontend.Services
                 new(ClaimTypes.NameIdentifier, member.Id.ToString()),
                 new(ClaimTypes.Name, member.Name),
                 new(ClaimTypes.Email, member.Email),
-                new(ClaimTypes.Role, member.Role)
+                new(ClaimTypes.Role, member.Role),
+                new("google_sub", member.PasswordHash)
             };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
             return context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties

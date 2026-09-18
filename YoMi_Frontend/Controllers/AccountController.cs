@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using YoMi_Admin.Library.Models.Frontend;
@@ -16,24 +17,81 @@ namespace YoMi_Frontend.Controllers
     [Route("account")]
     public class AccountController : Controller
     {
-        private readonly PortalService _portal;
-        private readonly IPasswordHasher<FrontendMember> _passwordHasher;
-        private readonly IConfiguration _configuration;
+        // Legacy dependencies retained for reference while password endpoints are disabled.
+        // private readonly PortalService _portal;
+        // private readonly IPasswordHasher<FrontendMember> _passwordHasher;
+        // private readonly IConfiguration _configuration;
+        private readonly GoogleMemberLogin _googleLogin;
+        private readonly IAuthenticationSchemeProvider _schemes;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(PortalService portal, IPasswordHasher<FrontendMember> passwordHasher, IConfiguration configuration)
+        public AccountController(GoogleMemberLogin googleLogin, IAuthenticationSchemeProvider schemes, ILogger<AccountController> logger)
         {
-            _portal = portal;
-            _passwordHasher = passwordHasher;
-            _configuration = configuration;
+            _googleLogin = googleLogin;
+            _schemes = schemes;
+            _logger = logger;
         }
 
         [AllowAnonymous, HttpGet(""), HttpGet("/email-auth")]
-        public IActionResult Index(string returnUrl = null)
+        public async Task<IActionResult> Index(string returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Home");
+            ViewData["GoogleEnabled"] = await _schemes.GetSchemeAsync(Startup.GoogleScheme) != null;
+            if (Request.Query.ContainsKey("googleError"))
+                ModelState.AddModelError(string.Empty, "Google 登入未完成或身分驗證失敗，請重新嘗試。");
             return View(new AccountViewModel { ReturnUrl = returnUrl });
         }
 
+        [AllowAnonymous, HttpPost("google"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> Google(string returnUrl = null)
+        {
+            if (await _schemes.GetSchemeAsync(Startup.GoogleScheme) == null)
+            {
+                TempData["Error"] = "此環境尚未設定 Google 登入憑證，請聯絡管理員。";
+                return RedirectToAction(nameof(Index));
+            }
+            await HttpContext.SignOutAsync(Startup.GoogleExternalCookieScheme);
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = "/account/google-complete",
+                IsPersistent = false
+            };
+            properties.Items["Purpose"] = "member";
+            properties.Items["ReturnUrl"] = Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
+            return Challenge(properties, Startup.GoogleScheme);
+        }
+
+        [AllowAnonymous, HttpGet("google-complete")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> GoogleComplete()
+        {
+            if (await _schemes.GetSchemeAsync(Startup.GoogleScheme) == null)
+                return RedirectToAction(nameof(Index));
+            var external = await HttpContext.AuthenticateAsync(Startup.GoogleExternalCookieScheme);
+            await HttpContext.SignOutAsync(Startup.GoogleExternalCookieScheme);
+            if (!external.Succeeded || !external.Properties.Items.TryGetValue("Purpose", out var purpose) || purpose != "member")
+                return RedirectToAction(nameof(Index));
+            try
+            {
+                var member = await _googleLogin.SignInAsync(external.Principal);
+                await AuthCookie.SignInAsync(HttpContext, member);
+                external.Properties.Items.TryGetValue("ReturnUrl", out var returnUrl);
+                return Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : LocalRedirect("/");
+            }
+            catch (UnauthorizedAccessException error)
+            {
+                TempData["Error"] = error.Message;
+            }
+            catch (Exception error)
+            {
+                _logger.LogError(error, "Google member login could not be completed.");
+                TempData["Error"] = "目前無法完成登入，請稍後重新嘗試或聯絡管理員。";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        /* Legacy password login/registration intentionally disabled (including API endpoints).
+           PasswordHash now stores Google sub, not a password hash. Do not re-enable unchanged.
         [AllowAnonymous, HttpPost("check-email"), ValidateAntiForgeryToken]
         public async Task<IActionResult> CheckEmail(string email)
         {
@@ -116,6 +174,8 @@ namespace YoMi_Frontend.Controllers
                 return View("Index", new AccountViewModel { Email = model.Email });
             }
         }
+
+        */
 
         [Authorize, HttpPost("logout"), ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()

@@ -3,6 +3,8 @@ obj/
 .vs/
 *.user
 *.suo
+local-secrets/
+**/client_secret_*.json
 wwwroot/files/
 wwwroot/uploads/backgrounds/*
 !wwwroot/uploads/backgrounds/.gitkeep

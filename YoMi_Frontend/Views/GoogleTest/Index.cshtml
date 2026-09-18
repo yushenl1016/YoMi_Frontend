@@ -1,0 +1,46 @@
+@model System.Security.Claims.ClaimsPrincipal
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>YoMi Google 登入測試</title>
+    <style>
+        body { margin: 0; background: #10111c; color: #eee; font: 1rem/1.7 system-ui, sans-serif; }
+        main { max-width: 640px; margin: 8vh auto; padding: 24px; }
+        input { box-sizing: border-box; width: 100%; padding: 12px; margin: 4px 0 20px; font: inherit; }
+        label { display: block; font-weight: bold; }
+        button { padding: 12px 24px; cursor: pointer; font: inherit; }
+        a { color: #9bcaff; }
+        .error { color: #ffb9b9; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Google 登入測試</h1>
+        <p>僅顯示 Google 驗證後的 sub 與 email，供你和原始 openId 比對。此測試不會新增或修改會員，也不會登入 YoMi 會員帳號。</p>
+        @if (ViewData["Error"] is true)
+        {
+            <p class="error" role="alert">Google 登入未完成或驗證失敗，請重新嘗試；若持續失敗，請確認 Google Console 的回呼網址與測試帳號設定。</p>
+        }
+        @if (Model != null)
+        {
+            <p role="status">Google 身分驗證成功，可複製以下資料進行比對。</p>
+            <label for="google-sub">sub</label>
+            <input id="google-sub" value="@(Model.FindFirst("sub")?.Value)" readonly />
+            <label for="google-email">email</label>
+            <input id="google-email" value="@(Model.FindFirst("email")?.Value)" readonly />
+            <p>測試憑證已清除；重新整理不會再次顯示這次結果。</p>
+        }
+        <form action="/account/google-test/start" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit">使用 Google 登入測試</button>
+        </form>
+        <p><a href="/email-auth">返回原登入頁</a></p>
+    </main>
+</body>
+</html>
