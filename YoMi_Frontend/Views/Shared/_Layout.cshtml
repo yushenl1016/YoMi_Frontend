@@ -14,6 +14,9 @@
     var logoUrl = ViewData["LogoUrl"] as string;
     var path = Context.Request.Path.Value ?? "/";
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isReferencePage = ViewData["ReferencePage"] is true;
+    var isHome = ViewData["HomeReplica"] is true || isReferencePage;
+    var homeIcons = Url.Content("~/images/home-icons.svg");
     string Active(string route) => string.Equals(path, route, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty;
 }
 <!DOCTYPE html>
@@ -26,9 +29,14 @@
     <title>@ViewData["Title"] - @applicationName</title>
     <link rel="icon" href="@logoUrl" type="image/gif" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (isReferencePage)
+    {
+        <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/reference-pages.css" asp-append-version="true" />
+    }
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body>
+<body class="@(isReferencePage ? "home-page reference-page " + ViewData["PageClass"] : isHome ? "home-page" : null)">
     @if (chrome.Background != null)
     {
         var backgroundUrl = chrome.Background.FileUrl.StartsWith("/uploads/backgrounds/", StringComparison.Ordinal)
@@ -67,20 +75,21 @@
             </nav>
 
             <div class="header-actions">
-                @if (chrome.Background?.MimeType.StartsWith("video/") == true)
+                @if (isHome)
+                {
+                    <partial name="_HomeVolume" />
+                    <span class="home-header-divider" aria-hidden="true"></span>
+                }
+                else if (chrome.Background?.MimeType.StartsWith("video/") == true)
                 {
                     <button class="sound-button" type="button" data-sound-toggle aria-label="切換背景音效">♫</button>
                 }
                 @if (isAuthenticated)
                 {
-                    @if (User.IsInRole("admin"))
-                    {
-                        <a class="admin-link" href="/admin">管理後台</a>
-                    }
-                    <span class="member-name">@User.Identity.Name</span>
+                    <partial name="_MemberMenu" />
                     <form class="inline-form" action="/account/logout" method="post">
                         @Html.AntiForgeryToken()
-                        <button class="text-button" type="submit">登出</button>
+                        <button class="text-button" type="submit">@if (isHome) { <svg class="home-icon" aria-hidden="true"><use href="@(homeIcons)#logout" /></svg> }登出</button>
                     </form>
                 }
                 else
@@ -90,13 +99,20 @@
             </div>
 
             <details class="mobile-nav">
-                <summary aria-label="開啟導覽選單">選單</summary>
+                <summary aria-label="開啟導覽選單">@if (isHome) { <svg class="home-icon menu-open-icon" aria-hidden="true"><use href="@(homeIcons)#menu" /></svg><svg class="home-icon menu-close-icon" aria-hidden="true"><use href="@(homeIcons)#close" /></svg> } else { <span>選單</span> }</summary>
                 <nav aria-label="行動版導覽">
                     <a href="/">首頁</a>
                     <a href="/price">價目表</a>
                     <a href="/vip">VIP 等級</a>
                     <a href="/my-records">我的消費</a>
-                    @if (User.IsInRole("admin")) { <a href="/admin">管理後台</a> }
+                    @if (isHome)
+                    {
+                        <partial name="_HomeVolume" />
+                        @if (isAuthenticated)
+                        {
+                            <div class="home-mobile-account"><partial name="_MemberMenu" /><form class="inline-form" action="/account/logout" method="post">@Html.AntiForgeryToken()<button class="text-button" type="submit">登出</button></form></div>
+                        }
+                    }
                     @if (!isAuthenticated) { <a href="/email-auth">登入 / 註冊</a> }
                 </nav>
             </details>
@@ -116,13 +132,21 @@
         @RenderBody()
     </main>
 
+    @if (!isHome)
+    {
     <footer class="site-footer">
         <div class="container footer-inner">
             <span class="footer-brand"><img class="footer-logo" src="@logoUrl" alt="" loading="lazy" />@applicationName · @chrome.Get("site_subtitle", "YUMI ESPORTS")</span>
             <span>@chrome.Get("footer_text", $"© {DateTime.Now.Year} 悠咪電競 · 保留所有權利")</span>
         </div>
     </footer>
+    }
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (isReferencePage)
+    {
+        <script src="~/js/home.js" asp-append-version="true"></script>
+        <script src="~/js/reference-pages.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

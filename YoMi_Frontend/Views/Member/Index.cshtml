@@ -1,43 +1,92 @@
 @model RecordsPageViewModel
 @{
     ViewData["Title"] = "我的消費";
+    ViewData["ReferencePage"] = true;
+    ViewData["PageClass"] = "records-page";
+    var icons = Url.Content("~/images/reference-icons.svg");
 }
-
-<header class="page-hero"><div class="hero-grid"></div><div class="container"><p class="eyebrow">MY ACCOUNT</p><h1>我的消費紀錄</h1><p>查看累積消費、VIP 等級與每筆服務明細。</p></div></header>
-
-<section class="page-content">
-    <div class="container narrow">
-        <section class="profile-card">
-            <div class="profile-name"><span class="profile-avatar">@Model.Member.Name.Substring(0, 1).ToUpperInvariant()</span><div><p>@Model.Member.Email</p><h2>@Model.Member.Name</h2></div></div>
-            <form class="inline-edit" action="/my-records/name" method="post">
-                @Html.AntiForgeryToken()
-                <label for="member-name">顯示名稱</label><input id="member-name" name="name" value="@Model.Member.Name" maxlength="64" required /><button type="submit">更新</button>
-            </form>
-        </section>
-
-        <section class="member-status @Model.Status.Tier.CssClass">
-            <div><span class="vip-icon">@Model.Status.Tier.Icon</span><p>目前等級</p><h2>@Model.Status.Tier.Name</h2></div>
-            <div class="status-total"><span>累積消費</span><strong>NT$@Model.Status.Total.ToString("N0")</strong></div>
-            <div class="progress-block"><div class="progress-label"><span>升級進度</span>@if (Model.Status.NextThreshold.HasValue) { <span>尚差 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</span> } else { <span>已達最高等級</span> }</div><div class="progress-track"><span style="width:@Model.Status.Progress.ToString("0.##")%"></span></div></div>
-        </section>
-
-        <section class="records-card">
-            <header><h2>消費明細</h2><span class="tag">@Model.Records.Count 筆</span></header>
-            @if (Model.Records.Count == 0)
-            {
-                <div class="empty-state"><span>▤</span><p>尚無消費紀錄</p></div>
-            }
-            else
-            {
-                <div class="responsive-table">
-                    <table><thead><tr><th>日期</th><th>類別</th><th>說明</th><th class="number">金額</th></tr></thead><tbody>
-                    @foreach (var record in Model.Records)
-                    {
-                        <tr><td>@record.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td><td><span class="tag tag-cyan">@record.Category</span></td><td>@(record.Description ?? "—")</td><td class="number price-text">NT$@record.Amount.ToString("N0")</td></tr>
-                    }
-                    </tbody></table>
-                </div>
-            }
+<header class="replica-heading"><div class="container">
+    <p class="replica-eyebrow">MY RECORDS</p><h1>我的消費記錄</h1>
+    <div class="member-greeting" data-member-greeting><p>歡迎回來，<strong>@(string.IsNullOrWhiteSpace(Model.Member.Name) ? "會員" : Model.Member.Name)</strong></p><button type="button" data-edit-name aria-label="編輯名稱" title="編輯名稱"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#edit" /></svg></button></div>
+    <form class="member-name-editor" action="@Url.Content("~/my-records/name")" method="post" data-name-editor hidden>
+        @Html.AntiForgeryToken()
+        <input aria-label="顯示名稱" name="name" value="@Model.Member.Name" maxlength="64" required />
+        <button type="submit" aria-label="儲存名稱" title="儲存名稱"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#check" /></svg></button>
+        <button type="button" data-cancel-name aria-label="取消編輯" title="取消編輯"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#close" /></svg></button>
+    </form>
+    <div class="member-referral-grid">
+        <section class="member-referral-card" aria-label="我的推薦碼"><partial name="_ReferralCode" /></section>
+        <section class="member-referral-card member-referrer-card" id="my-referrer" aria-labelledby="my-referrer-title">
+            <h2 id="my-referrer-title">我的推薦人</h2>
+            <div data-referrer-bound hidden="@(Model.Referrer == null)">
+                <div class="member-referrer-name"><strong data-bound-name>@Model.Referrer?.Name</strong><span>已綁定</span></div>
+                <code data-bound-code>@Model.Referrer?.Code</code>
+            </div>
+            <div data-referrer-unbound hidden="@(Model.Referrer != null)">
+                <p>尚未綁定推薦人</p>
+                <button type="button" class="referrer-button" data-open-referrer>綁定推薦人</button>
+            </div>
+            <small>每位會員只能綁定一位推薦人，綁定後不能改綁。</small>
+            <span class="member-copy-status" data-binding-status role="status"></span>
         </section>
     </div>
+</div></header>
+<section class="replica-content container">
+    <div class="record-stats">
+        <section class="replica-panel record-stat"><p><svg class="home-icon stat-yellow" aria-hidden="true"><use href="@(icons)#trending" /></svg>累積消費</p><strong class="stat-yellow">NT$@Model.Status.Total.ToString("N0")</strong></section>
+        <section class="replica-panel record-stat"><p><svg class="home-icon stat-cyan" aria-hidden="true"><use href="@(icons)#receipt" /></svg>消費筆數</p><strong class="stat-cyan">@Model.Records.Count 筆</strong></section>
+        <section class="replica-panel record-stat record-tier @Model.Status.Tier.CssClass"><p><svg class="home-icon" aria-hidden="true"><use href="@(Url.Content("~/images/home-icons.svg"))#star" /></svg>VIP 等級</p><div><span>@Model.Status.Tier.Icon</span><strong class="vip-tier-name">@Model.Status.Tier.Name</strong></div></section>
+    </div>
+    @if (Model.Status.NextThreshold.HasValue)
+    {
+        <section class="record-progress replica-panel @Model.Status.Tier.CssClass">
+            <div><span>升級進度</span><span>距離下一等級還差 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</span></div>
+            <partial name="_ReferenceProgress" model="Model.Status" />
+            <div class="progress-thresholds"><span>NT$@Model.Status.Tier.Threshold.ToString("N0")</span><span>NT$@Model.Status.NextThreshold.Value.ToString("N0")</span></div>
+        </section>
+    }
+    <section class="replica-records replica-panel">
+        <header><h2>消費明細</h2><span class="replica-tag">@Model.Records.Count 筆</span></header>
+        @if (Model.Records.Count == 0)
+        {
+            <div class="replica-empty"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#receipt" /></svg><p>尚無消費記錄</p></div>
+        }
+        else
+        {
+            <table><thead><tr><th>日期</th><th>類別</th><th>說明</th><th>金額</th></tr></thead><tbody>
+            @foreach (var record in Model.Records)
+            {
+                <tr><td>@record.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td><td><span class="replica-tag tag-recommended">@(string.IsNullOrWhiteSpace(record.Category) ? "一般消費" : record.Category)</span></td><td title="@record.Description">@(string.IsNullOrWhiteSpace(record.Description) ? "—" : record.Description)</td><td>NT$@record.Amount.ToString("N0")</td></tr>
+            }
+            </tbody></table>
+        }
+    </section>
 </section>
+@if (Model.Referrer == null)
+{
+    <dialog class="referrer-dialog" data-referrer-dialog aria-labelledby="referrer-dialog-title" aria-describedby="referrer-rule">
+        <form action="@Url.Action("BindReferrer", "Member")" method="post" data-referrer-form data-preview-url="@Url.Action("PreviewReferrer", "Member")">
+            @Html.AntiForgeryToken()
+            <h2 id="referrer-dialog-title">綁定推薦人</h2>
+            <div data-referrer-entry>
+                <label for="referrer-code">推薦人的推薦碼</label>
+                <input id="referrer-code" name="code" placeholder="輸入 16 碼推薦碼" maxlength="16" pattern="[0-9A-Fa-f]{16}" required autocomplete="off" spellcheck="false" aria-describedby="referrer-rule referrer-error" />
+            </div>
+            <div class="referrer-preview" data-referrer-preview hidden>
+                <p>請確認這是你的推薦人</p>
+                <strong data-preview-name></strong>
+                <code data-preview-code></code>
+            </div>
+            <p class="referrer-rule" id="referrer-rule">每位會員只能綁定一位推薦人，確認後不能更換或解除綁定。</p>
+            <p class="referrer-error" id="referrer-error" data-referrer-error role="alert"></p>
+            <div class="referrer-dialog-actions">
+                <button type="button" class="referrer-button secondary" data-close-referrer>取消</button>
+                <button type="button" class="referrer-button secondary" data-back-referrer hidden>重新輸入</button>
+                <button type="submit" class="referrer-button" data-submit-referrer>查詢推薦人</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/member-referrer.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,8 @@
+@{ var icons = Url.Content("~/images/home-icons.svg"); }
+<details class="home-volume">
+    <summary aria-label="背景音量" title="背景音量"><svg class="home-icon" aria-hidden="true"><use data-home-volume-icon href="@(icons)#volume-muted" /></svg></summary>
+    <div class="home-volume-panel">
+        <div><button type="button" data-home-mute aria-label="開啟背景音效" aria-pressed="false"><svg class="home-icon" aria-hidden="true"><use data-home-volume-icon href="@(icons)#volume-muted" /></svg></button><span data-home-volume-label>靜音</span></div>
+        <input type="range" min="0" max="100" step="1" value="0" data-home-volume aria-label="背景音量百分比" />
+    </div>
+</details>

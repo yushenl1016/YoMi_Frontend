@@ -678,6 +678,48 @@ a {
     white-space: nowrap;
 }
 
+.member-menu { position: relative; }
+.member-menu > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
+.member-menu > summary::-webkit-details-marker { display: none; }
+.member-menu > summary .home-icon { width: 12px; height: 12px; flex-shrink: 0; }
+.member-menu > summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.member-menu-panel { position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; width: min(280px, calc(100vw - 40px)); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 30px #0006; }
+.member-menu-panel > strong { display: block; margin-bottom: 12px; color: var(--text); overflow-wrap: anywhere; }
+.member-referral-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+.member-referral-actions button { padding: 4px 0 4px 12px; border: 0; background: none; color: var(--cyan); cursor: pointer; font: inherit; }
+.member-referral-actions button:disabled { opacity: .45; cursor: default; }
+.member-referral code { display: block; color: var(--text); font-size: 16px; user-select: all; overflow-wrap: anywhere; }
+.member-referral-card { width: min(100%, 360px); margin-top: 20px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.member-copy-status { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+.member-copy-status:empty { display: none; }
+.mobile-nav .member-menu-panel { right: auto; left: 0; }
+.member-referrer-link { display: block; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--cyan); font-size: 13px; }
+.member-referral-grid { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 16px; }
+.member-referrer-card { scroll-margin-top: 100px; }
+.member-referrer-card h2 { margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.member-referrer-card small { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.member-referrer-card code, .referrer-preview code { display: block; margin-top: 6px; color: var(--muted); overflow-wrap: anywhere; }
+.member-referrer-name { display: flex; align-items: center; gap: 12px; }
+.member-referrer-name strong, .referrer-preview strong { overflow-wrap: anywhere; }
+.member-referrer-name span { flex-shrink: 0; color: var(--cyan); font-size: 12px; }
+.member-referrer-card .referrer-button { margin-top: 10px; }
+.referrer-button { padding: 9px 14px; border: 1px solid var(--cyan); border-radius: 6px; background: #00f5ff12; color: var(--cyan); font: inherit; font-size: 13px; cursor: pointer; }
+.referrer-button.secondary { border-color: var(--border); background: transparent; color: var(--muted); }
+.referrer-button:disabled { opacity: .5; cursor: wait; }
+.referrer-button:focus-visible, .referrer-dialog input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.referrer-dialog { width: min(440px, calc(100% - 32px)); max-height: calc(100% - 32px); margin: auto; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 24px 80px #0008; }
+.referrer-dialog::backdrop { background: #000b; }
+.referrer-dialog h2 { margin: 0 0 20px; font-size: 20px; }
+.referrer-dialog label { display: block; margin-bottom: 8px; font-size: 14px; }
+.referrer-dialog input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: #0003; color: var(--text); font: inherit; letter-spacing: .06em; }
+.referrer-preview { padding: 16px; border: 1px solid var(--border); border-radius: 6px; }
+.referrer-preview p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.referrer-preview strong { display: block; font-size: 20px; }
+.referrer-rule { margin: 16px 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.referrer-error { color: #ff8bb3; font-size: 13px; }
+.referrer-error:empty { display: none; }
+.referrer-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
 .flash {
     position: fixed;
     z-index: 60;
@@ -839,6 +881,32 @@ a {
 .vip-platinum { color: #98bfff; }
 .vip-diamond { color: var(--cyan); }
 .vip-supreme { color: #ff653f; }
+
+/* Original ZIP: vip-supreme-text / supreme-neon. Tier names and the price-page discount. */
+.vip-supreme .vip-tier-name,
+.vip-supreme .vip-discount {
+    background: linear-gradient(90deg,
+        oklch(0.92 0.22 95) 0%,
+        oklch(0.85 0.20 195) 25%,
+        oklch(0.90 0.25 320) 50%,
+        oklch(0.85 0.20 195) 75%,
+        oklch(0.92 0.22 95) 100%);
+    background-size: 250% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: supreme-neon 3s linear infinite;
+}
+
+@keyframes supreme-neon {
+    0% { background-position: 0% center; }
+    100% { background-position: 250% center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vip-supreme .vip-tier-name,
+    .vip-supreme .vip-discount { animation: none; }
+}
 
 .feature-grid {
     display: grid;

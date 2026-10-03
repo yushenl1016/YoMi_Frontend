@@ -1,0 +1,11 @@
+<details class="member-menu" data-member-menu>
+    <summary class="member-name" aria-label="@(User.Identity.Name) 的會員選單" title="查看推薦碼">
+        <svg class="home-icon" aria-hidden="true"><use href="@(Url.Content("~/images/home-icons.svg"))#user" /></svg>
+        @User.Identity.Name
+    </summary>
+    <div class="member-menu-panel">
+        <strong>@User.Identity.Name</strong>
+        <partial name="_ReferralCode" />
+        <a class="member-referrer-link" href="@Url.Action("Index", "Member")#my-referrer">我的推薦人</a>
+    </div>
+</details>

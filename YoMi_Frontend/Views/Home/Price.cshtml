@@ -1,40 +1,38 @@
 @model PricePageViewModel
 @{
     ViewData["Title"] = "價目表";
+    ViewData["ReferencePage"] = true;
+    ViewData["PageClass"] = "price-page";
 }
-
-<header class="page-hero"><div class="hero-grid"></div><div class="container"><img class="page-logo" src="@(ViewData["LogoUrl"])" alt="悠咪電競 Logo" /><p class="eyebrow">SERVICES</p><h1>服務價目表</h1><p>所有價格均以新台幣（NT$）計算，VIP 會員可享專屬折扣優惠。</p></div></header>
-
-<section class="page-content">
-    <div class="container">
-        <div class="section-heading compact"><p class="eyebrow">VIP DISCOUNT</p><h2>VIP 會員折扣一覽</h2></div>
-        <div class="vip-card-grid compact-grid">
-            @foreach (var tier in VipRules.Tiers)
-            {
-                <article class="vip-mini-card @tier.CssClass"><span class="vip-icon">@tier.Icon</span><h3>@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong>@tier.DiscountLabel</strong></article>
-            }
+<header class="replica-heading"><div class="container heading-content">
+    <div class="heading-logo"><img src="@(ViewData["LogoUrl"])" alt="悠咪電競" /><span>PRICE LIST</span></div>
+    <div><p class="replica-eyebrow">SERVICES</p><h1>服務價目表</h1><p>所有價格均以新台幣（NT$）計算，VIP 會員可享專屬折扣優惠</p></div>
+</div></header>
+<section class="replica-content container">
+    <p class="replica-eyebrow discount-eyebrow">VIP DISCOUNT</p>
+    <section class="discount-panel replica-panel">
+        <header><h2>VIP 會員折扣一覽</h2><span class="replica-tag">累積消費自動升級</span></header>
+        <div class="discount-grid">
+        @foreach (var tier in VipRules.Tiers)
+        {
+            var discount = tier.Level == 3 ? "97折起" : (tier.Discount * 100).ToString("0").TrimEnd('0') + "折";
+            <article class="discount-card @tier.CssClass"><span>@tier.Icon</span><h3 class="vip-tier-name">@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong class="vip-discount">@discount</strong></article>
+        }
         </div>
-
-        <aside class="birthday-card"><span>🎂</span><div><h3>壽星悠咪 VIP 優惠</h3><p>生日當日前後各一天（共三天）可擇一天享全場 <strong>85 折</strong> 優惠；實際適用項目請洽客服。</p></div></aside>
-
-        <nav class="tab-nav" aria-label="價目分類">
-            @foreach (var tab in new[] { "基礎", "趣味", "訂製" })
-            {
-                <a class="@(Model.SelectedTab == tab ? "is-active" : "")" href="/price?tab=@Uri.EscapeDataString(tab)">@tab</a>
-            }
-        </nav>
-
-        <div class="price-table">
-            @if (Model.Items.Count == 0)
-            {
-                <div class="empty-state">尚無服務項目</div>
-            }
-            @foreach (var item in Model.Items)
-            {
-                <article class="price-row"><div><h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><strong>@item.Price</strong></article>
-            }
-        </div>
-
-        <aside class="notice-card"><h3>ⓘ 注意事項</h3><ul><li>所有價格以新台幣計算，實際報價依需求與難度調整。</li><li>VIP 折扣適用於一般消費項目，趣味單、代解 3x3、代儲值為固定價位不打折。</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積金額。</li><li>特殊需求或自訂服務請直接洽詢客服報價。</li></ul></aside>
+    </section>
+    <aside class="replica-birthday"><span>🎂</span><div><h3>壽星悠咪 VIP 優惠</h3><p>生日當日前後各一天（共三天）可擇一天享全場 <strong>85折</strong> 優惠。例：5/9 生日，可於 5/8、5/9、5/10 中選擇一天使用。<br />陸服老闆可要求打手使用海底撈生日快樂動作並附加唱完整首。</p></div></aside>
+    <nav class="price-tabs" aria-label="價目分類">
+    @foreach (var tab in new[] { "基礎", "趣味", "訂製" })
+    {
+        <a class="@(Model.SelectedTab == tab ? "is-active" : "")" aria-current="@(Model.SelectedTab == tab ? "page" : null)" href="@Url.Content("~/price")?tab=@Uri.EscapeDataString(tab)">@tab</a>
+    }
+    </nav>
+    <div class="replica-price-table replica-panel" data-price-results aria-live="polite">
+        @if (Model.Items.Count == 0) { <div class="replica-empty">尚無服務項目</div> }
+        @foreach (var item in Model.Items)
+        {
+            <article class="replica-price-row"><div><h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><strong>@item.Price</strong></article>
+        }
     </div>
+    <aside class="replica-notice replica-panel"><h3>ⓘ 注意事項</h3><ul><li>所有價格以新台幣（NT$）計算，實際報價依需求與難度調整。</li><li>VIP 折扣適用於一般消費項目，趣味單、代解 3x3、代儲值為固定價位不打折。</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積金額計算。</li><li>如有特殊需求或自訂服務，請直接洽詢客服報價。</li></ul></aside>
 </section>

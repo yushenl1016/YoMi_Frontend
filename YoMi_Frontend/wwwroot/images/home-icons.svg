@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Line icons matching the original homepage's lucide shapes; no runtime dependency. -->
+  <symbol id="zap" viewBox="0 0 24 24"><path d="m13 2-10 12h9l-1 8 10-12h-9l1-8Z"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/></symbol>
+  <symbol id="trophy" viewBox="0 0 24 24"><path d="M8 21h8m-4-5v5M7 4h10v5a5 5 0 0 1-10 0V4Zm0 1H4a2 2 0 0 0 0 4h3m10-4h3a2 2 0 0 1 0 4h-3"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></symbol>
+  <symbol id="chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></symbol>
+  <symbol id="logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5M21 12H9"/></symbol>
+  <symbol id="volume-muted" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4V5Zm6 4 5 6m0-6-5 6"/></symbol>
+  <symbol id="volume" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4V5Zm4 3a5 5 0 0 1 0 8m3-11a9 9 0 0 1 0 14"/></symbol>
+  <symbol id="menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+</svg>

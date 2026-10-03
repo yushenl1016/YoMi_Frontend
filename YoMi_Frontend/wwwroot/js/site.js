@@ -69,3 +69,61 @@ if (soundButton && backgroundVideo) {
 
 const flash = document.querySelector(".flash");
 if (flash) window.setTimeout(() => flash.remove(), 4500);
+
+document.querySelectorAll('[data-referral]').forEach(panel => {
+    const menu = panel.closest('[data-member-menu]');
+    const code = panel.querySelector('[data-referral-code]');
+    const copy = panel.querySelector('[data-copy-referral]');
+    const status = panel.querySelector('[data-referral-status]');
+    let referralCode, loading = false;
+    const loadCode = async () => {
+        if (referralCode || loading) return;
+        loading = true;
+        code.textContent = '載入中…';
+        try {
+            const response = await fetch(panel.dataset.codeUrl, { cache: 'no-store', credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Referral code request failed');
+            const result = await response.json();
+            if (!result.code || typeof result.code !== 'string') throw new Error('Referral code is missing');
+            referralCode = result.code;
+            code.textContent = referralCode;
+            copy.disabled = false;
+        } catch {
+            code.textContent = '暫時無法取得';
+        } finally {
+            loading = false;
+        }
+    };
+    if (menu) menu.addEventListener('toggle', () => { if (menu.open) return loadCode(); });
+    else loadCode();
+    copy.addEventListener('click', async event => {
+        event.stopPropagation();
+        if (!referralCode) return;
+        try {
+            await navigator.clipboard.writeText(referralCode);
+            copy.textContent = '已複製';
+            status.textContent = '推薦碼已複製';
+        } catch {
+            copy.textContent = '請選取複製';
+            status.textContent = '請選取推薦碼並手動複製';
+        }
+    });
+});
+
+document.querySelectorAll('[data-member-menu]').forEach(menu => {
+    menu.querySelector('.member-referrer-link')?.addEventListener('click', () => {
+        menu.open = false;
+        const mobileNav = menu.closest('.mobile-nav');
+        if (mobileNav) mobileNav.open = false;
+    });
+    menu.addEventListener('keydown', event => {
+        if (event.key !== 'Escape' || !menu.open) return;
+        event.preventDefault();
+        event.stopPropagation();
+        menu.open = false;
+        menu.querySelector('summary').focus();
+    });
+    document.addEventListener('click', event => {
+        if (!menu.contains(event.target)) menu.open = false;
+    });
+});

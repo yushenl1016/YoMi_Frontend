@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
-using YoMi_Frontend.Models;
+using YoMi_Admin.Library.Models.Frontend;
 using YoMi_Frontend.Services;
 using YoMi_Frontend.ViewModels;
 
@@ -13,10 +15,12 @@ namespace YoMi_Frontend.Controllers
     public class MemberController : Controller
     {
         private readonly PortalService _portal;
+        private readonly ILogger<MemberController> _logger;
 
-        public MemberController(PortalService portal)
+        public MemberController(PortalService portal, ILogger<MemberController> logger)
         {
             _portal = portal;
+            _logger = logger;
         }
 
         [HttpGet("")]
@@ -35,8 +39,54 @@ namespace YoMi_Frontend.Controllers
             {
                 Member = member,
                 Records = await _portal.GetConsumptionRecordsAsync(id),
-                Status = VipRules.GetStatus(total)
+                Status = VipRules.GetStatus(total),
+                Referrer = await _portal.GetReferrerAsync(id)
             });
+        }
+
+        [HttpGet("referral-code"), ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+        public async Task<IActionResult> ReferralCode()
+        {
+            var id = AuthCookie.GetMemberId(User);
+            if (id <= 0) return Unauthorized();
+            var code = await _portal.GetReferralCodeAsync(id);
+            return code == null ? NotFound() : Json(new { code });
+        }
+
+        [HttpPost("referrer/preview"), ValidateAntiForgeryToken, ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+        public async Task<IActionResult> PreviewReferrer(string code)
+        {
+            var id = AuthCookie.GetMemberId(User);
+            if (id <= 0) return Unauthorized();
+            try
+            {
+                var referrer = await _portal.PreviewReferrerAsync(id, code);
+                return Json(new { name = referrer.Name, code = referrer.Code });
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not preview referrer for member {MemberId}", id);
+                return StatusCode(500, new { message = "暫時無法查詢推薦人，請稍後再試。" });
+            }
+        }
+
+        [HttpPost("referrer/bind"), ValidateAntiForgeryToken, ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+        public async Task<IActionResult> BindReferrer(string code)
+        {
+            var id = AuthCookie.GetMemberId(User);
+            if (id <= 0) return Unauthorized();
+            try
+            {
+                await _portal.BindReferrerAsync(id, code);
+                return Json(new { success = true });
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not bind referrer for member {MemberId}", id);
+                return StatusCode(500, new { message = "綁定未完成，請稍後重試。" });
+            }
         }
 
         [HttpPost("name"), ValidateAntiForgeryToken]

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using YoMi_Admin.Library.Models.Frontend;
-using YoMi_Frontend.Models;
 
 namespace YoMi_Frontend.ViewModels
 {
@@ -40,6 +39,13 @@ namespace YoMi_Frontend.ViewModels
         public FrontendMember Member { get; init; }
         public IReadOnlyList<FrontendConsumptionRecord> Records { get; init; } = Array.Empty<FrontendConsumptionRecord>();
         public VipStatus Status { get; init; }
+        public MemberReferrerViewModel Referrer { get; init; }
+    }
+
+    public sealed class MemberReferrerViewModel
+    {
+        public string Name { get; init; }
+        public string Code { get; init; }
     }
 
     public sealed class AccountViewModel

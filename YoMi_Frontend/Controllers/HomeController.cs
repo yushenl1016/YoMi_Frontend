@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using YoMi_Frontend.Models;
+using YoMi_Admin.Library.Models.Frontend;
 using YoMi_Frontend.Services;
 using YoMi_Frontend.ViewModels;
 
