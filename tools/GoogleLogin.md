@@ -19,6 +19,7 @@ Google Console 必須登記實際網站的 HTTPS 網域／連接埠加上 Callba
 - `SysConfig.Id = FrontendGoogleMigrationCutoff`，`Value = 2026-09-18 21:44:04`，固定為台灣時間（UTC+8），格式 `yyyy-MM-dd HH:mm:ss`。程式轉成 UTC 與會員 CreatedAt 比較，每次登入讀取最新值，不快取、不在啟動時改為現在。
 - 已存在 Email：CreatedAt 不晚於截止時間 **且**旗標 false，允許以 Google 驗證過的 Email 首次綁定 sub；其他情況必須 Email、sub 都相符。缺少或格式錯誤的截止設定不允許 Email-only 綁定。
 - 不存在 Email：自動建立一般會員，存 sub，旗標 true。不因 BootstrapAdminEmail 自動授權為管理員。同一 sub 已屬於另一 Email 時拒絕新增或自動合併。
+- 推薦註冊網址為 `/account?ref={16碼推薦碼}`。推薦碼由註冊頁隱藏欄位帶入 Google 受保護的驗證狀態，回呼只採用該狀態內的推薦碼；新會員建檔及綁定推薦人同一交易提交，推薦碼無效則整筆回復。已有會員登入不新增或改綁推薦人；取消 Google 登入後重試仍保留推薦碼。前台推薦碼、我的推薦人及手動綁定入口暫時不顯示。
 - 所有會員登入均需 Google 驗證簽章、issuer、audience、有效期、state／nonce／PKCE，並要求 email_verified=true；首次綁定和旗標更新在同一資料庫交易內完成。舊登入 Cookie 不含 google_sub，會要求重新 Google 登入。
 - 注意：Google 對第三方信箱不一定能保證目前所有權，即使 email_verified=true。這裡依需求採 Email-only 首次遷移；若需支援高風險帳號或非 Gmail／Workspace 信箱，上線前應考慮額外驗證或人工綁定，不要任意延後截止時間或重設旗標。
 

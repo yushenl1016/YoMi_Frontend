@@ -14,6 +14,7 @@
         <button type="submit" aria-label="儲存名稱" title="儲存名稱"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#check" /></svg></button>
         <button type="button" data-cancel-name aria-label="取消編輯" title="取消編輯"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#close" /></svg></button>
     </form>
+    @* 推薦碼與我的推薦人暫不顯示。
     <div class="member-referral-grid">
         <section class="member-referral-card" aria-label="我的推薦碼"><partial name="_ReferralCode" /></section>
         <section class="member-referral-card member-referrer-card" id="my-referrer" aria-labelledby="my-referrer-title">
@@ -30,6 +31,7 @@
             <span class="member-copy-status" data-binding-status role="status"></span>
         </section>
     </div>
+    *@
 </div></header>
 <section class="replica-content container">
     <section class="replica-panel" style="padding:24px;margin-bottom:24px">
@@ -71,6 +73,7 @@
         }
     </section>
 </section>
+@* 前台手動綁定入口暫不顯示。
 @if (Model.Referrer == null)
 {
     <dialog class="referrer-dialog" data-referrer-dialog aria-labelledby="referrer-dialog-title" aria-describedby="referrer-rule">
@@ -99,3 +102,4 @@
 @section Scripts {
     <script src="~/js/member-referrer.js" asp-append-version="true"></script>
 }
+*@

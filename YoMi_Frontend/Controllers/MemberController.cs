@@ -39,8 +39,7 @@ namespace YoMi_Frontend.Controllers
             {
                 Member = member,
                 Records = await _portal.GetConsumptionRecordsAsync(id),
-                Status = VipRules.GetStatus(total),
-                Referrer = await _portal.GetReferrerAsync(id)
+                Status = VipRules.GetStatus(total)
             });
         }
 

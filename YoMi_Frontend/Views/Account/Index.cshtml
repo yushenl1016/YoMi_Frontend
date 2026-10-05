@@ -27,6 +27,7 @@
             <form action="/account/google" method="post">
                 @Html.AntiForgeryToken()
                 <input asp-for="ReturnUrl" type="hidden" />
+                <input asp-for="ReferralCode" type="hidden" />
                 <button class="primary-button full-button" type="submit">使用 Google 登入</button>
             </form>
             <p>原有會員請使用相同 Email 的 Google 帳號，以保留消費紀錄。</p>

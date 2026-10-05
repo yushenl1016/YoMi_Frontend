@@ -130,7 +130,10 @@ namespace YoMi_Frontend
                     {
                         context.HandleResponse();
                         var testOnly = context.Properties?.Items.TryGetValue("Purpose", out var purpose) == true && purpose == "test";
-                        context.Response.Redirect(testOnly ? "/account/google-test?error=1" : "/email-auth?googleError=1");
+                        var retry = "/email-auth?googleError=1";
+                        if (context.Properties?.Items.TryGetValue("ReferralCode", out var referralCode) == true && !string.IsNullOrEmpty(referralCode))
+                            retry += "&ref=" + Uri.EscapeDataString(referralCode);
+                        context.Response.Redirect(testOnly ? "/account/google-test?error=1" : retry);
                         return Task.CompletedTask;
                     };
                 });

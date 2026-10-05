@@ -50,6 +50,7 @@ namespace YoMi_Frontend.ViewModels
 
     public sealed class AccountViewModel
     {
+        public string ReferralCode { get; set; }
         [Required(ErrorMessage = "請輸入郵箱")]
         [EmailAddress(ErrorMessage = "請輸入有效的郵箱")]
         [StringLength(320)]

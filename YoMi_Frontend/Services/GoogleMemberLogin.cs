@@ -19,7 +19,7 @@ namespace YoMi_Frontend.Services
         public GoogleMemberLogin(DBContext db) => _db = db;
 
         // Only called with the principal produced by the Google OIDC token validator.
-        public async Task<FrontendMember> SignInAsync(ClaimsPrincipal principal)
+        public async Task<FrontendMember> SignInAsync(ClaimsPrincipal principal, string referralCode = null)
         {
             var sub = principal?.FindFirstValue("sub");
             var email = principal?.FindFirstValue("email")?.Trim().ToLowerInvariant();
@@ -34,6 +34,7 @@ namespace YoMi_Frontend.Services
             // Atomic lookup/binding prevents simultaneous first logins from overwriting a binding.
             await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             var member = await _db.FrontendMember.SingleOrDefaultAsync(x => x.Email == email);
+            var isNewMember = member == null;
             if (await _db.FrontendMember.AnyAsync(x => x.PasswordHash == sub && x.Email != email))
                 throw new UnauthorizedAccessException("此 Google 帳號已對應其他會員 Email，請聯絡管理員。");
 
@@ -71,6 +72,9 @@ namespace YoMi_Frontend.Services
             member.LastSignedIn = now;
             member.UpdatedAt = now;
             await _db.SaveChangesAsync();
+            // Registration and referral binding commit together; existing members are never rebound by a link.
+            if (isNewMember && !string.IsNullOrWhiteSpace(referralCode))
+                await new PortalService(_db).BindReferrerAsync(member.Id, referralCode);
             await transaction.CommitAsync();
             return member;
         }
