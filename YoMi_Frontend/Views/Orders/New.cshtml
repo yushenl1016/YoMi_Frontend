@@ -1,0 +1,60 @@
+@model OrderFormViewModel
+@{
+    ViewData["Title"] = "立即下單"; ViewData["ReferencePage"] = true; ViewData["PageClass"] = "order-page";
+    var input = Model.Input;
+    var fixedPrice = Model.Item?.OrderUnitPrice.HasValue == true;
+    var unit = Model.Item?.OrderUnit ?? "單";
+}
+@section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
+<section class="container order-content">
+    <p class="replica-eyebrow">BOOK YOUR NEXT GAME</p><h1>立即下單</h1><p class="order-muted">選擇服務，確認需求，我們陪你完成下一場挑戰。</p>
+    <partial name="_Navigation" model='@("new")' />
+    <div asp-validation-summary="All" class="order-error" role="alert"></div>
+    @if (Model.Item == null && !input.IsCustom)
+    {
+        @foreach (var category in Model.Items.GroupBy(x => x.Tab))
+        {
+            <h2 class="order-category">@category.Key</h2><div class="order-service-grid">
+            @foreach (var item in category)
+            {
+                <a class="order-panel order-service" asp-action="New" asp-route-itemId="@item.Id"><span class="order-muted">@item.Tab</span><h3>@item.Name</h3><p>@item.Note</p><strong>@(item.OrderUnitPrice.HasValue ? $"NT$ {item.OrderUnitPrice.Value:N0} / {item.OrderUnit}" : "特殊單 · 價格未定")</strong><span class="order-service-next">@(item.OrderUnitPrice.HasValue ? "選擇服務 →" : "填寫需求 →")</span></a>
+            }
+            </div>
+        }
+        @if (Model.Items.Count == 0) { <div class="order-panel">目前尚無開放下單的服務。</div> }
+        <div class="order-custom-callout"><p>寫下你想玩的內容與目標，由客服協助確認服務及報價。</p><a class="secondary-button" asp-action="New" asp-route-custom="true">找不到你想要的單？</a></div>
+    }
+    else
+    {
+        <a asp-action="New" class="order-back">← 重新選擇服務</a>
+        <div class="order-layout"><div class="order-panel">
+            <form asp-action="@(fixedPrice ? "Review" : "Create")" method="post" class="order-form">
+                <input type="hidden" name="RequestId" value="@input.RequestId" /><input type="hidden" name="ItemId" value="@input.ItemId" />
+                <input type="hidden" name="IsCustom" value="@input.IsCustom.ToString().ToLowerInvariant()" />
+                <h2>@(input.IsCustom ? "提出想打的單" : Model.Item.Name)</h2><p class="order-muted">@(input.IsCustom ? "告訴我們你想玩的遊戲、目標與需求，客服會再與你確認報價。" : Model.Item.Note)</p>
+                @if (input.IsCustom)
+                {
+                    <label for="custom-service">想打什麼單？</label><input id="custom-service" name="CustomService" value="@input.CustomService" maxlength="128" placeholder="例如：特定地圖陪玩、任務挑戰" required />
+                }
+                <label for="order-quantity">數量（@unit）</label><input id="order-quantity" name="Quantity" type="number" value="@input.Quantity" min="1" max="1000" step="1" required />
+                @if (Model.Item?.WeeklyLimit.HasValue == true) { <small>最近七天最多 @Model.Item.WeeklyLimit @unit；待付款訂單也會保留名額。</small> }
+                <label for="game-account">遊戲暱稱／ID</label><input id="game-account" name="GameAccount" value="@input.GameAccount" maxlength="128" required autocomplete="off" />
+                <label for="game-server">伺服器</label>
+                <select id="game-server" name="GameServer" required>
+                    <option value="">請選擇伺服器</option>
+                    <option value="台服" selected="@(input.GameServer == "台服")">台服</option>
+                    <option value="陸服" selected="@(input.GameServer == "陸服")">陸服</option>
+                </select>
+                <label for="order-contact">Discord／LINE 聯絡帳號</label><input id="order-contact" name="Contact" value="@input.Contact" maxlength="200" placeholder="請註明使用的平台與帳號" required />
+                <label for="order-requirements">@(fixedPrice ? "服務需求／希望時間（選填）" : "特殊單需求")</label><textarea id="order-requirements" name="Requirements" rows="5" maxlength="2000" required="@(!fixedPrice)" placeholder="描述你的需求與希望時間，客服會再與你確認安排。">@input.Requirements</textarea>
+                <button class="primary-button" type="submit">@(fixedPrice ? "下一步：確認金額" : "送出並聯絡客服")</button>
+            </form>
+        </div><aside class="order-panel order-summary"><p class="replica-eyebrow">YOUR ORDER</p><h2>服務資訊</h2>
+            <strong class="order-total">@(fixedPrice ? $"NT$ {Model.Item.OrderUnitPrice.Value:N0}" : "價格未定")</strong>
+            <p>@(fixedPrice ? $"每{unit}價格，下一步確認數量與會員優惠。" : "先送出需求並聯絡客服；報價確認後，再回訂單查看付款資訊。")</p>
+            @if (fixedPrice) { <p class="order-muted">@(Model.Item.AllowVipDiscount ? "適用的 VIP、生日與白金首單優惠由系統判定，擇優計算。" : "此服務為固定價，不適用會員折扣。")</p> }
+            <p class="order-muted">@(input.IsCustom ? "是否計入 VIP 累積，由客服報價時確認。" : Model.Item.CountsForVip ? "完成服務且所有工作報單審核通過後，累積 VIP 消費。" : "此服務不計入 VIP 累積。")</p>
+            <a href="/my-records">查看會員資料／設定生日 →</a>
+        </aside></div>
+    }
+</section>

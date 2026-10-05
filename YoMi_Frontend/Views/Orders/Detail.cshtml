@@ -1,0 +1,108 @@
+@using YoMi_Admin.Library.Models.Orders
+@model OrderDetailViewModel
+@{
+    ViewData["Title"] = "訂單詳情"; ViewData["ReferencePage"] = true; ViewData["PageClass"] = "order-page";
+    var order = Model.Order;
+    var canPay = order.Status == CustomerOrderStatus.AwaitingPayment || order.Status == CustomerOrderStatus.ProofSubmitted;
+    var transfer = Model.Get("payment_transfer"); var cardless = Model.Get("payment_cardless");
+    var discord = Model.ContactUrl("contact_discord"); var line = Model.ContactUrl("contact_line");
+}
+@section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
+<section class="container order-content">
+    <a asp-action="Index" asp-route-history="@(order.Status == CustomerOrderStatus.Completed || order.Status == CustomerOrderStatus.Cancelled)" class="order-back">← 我的訂單</a><div class="order-heading"><div><p class="replica-eyebrow">YOUR ORDER</p><h1>訂單詳情</h1><p class="order-muted">@OrderRules.Number(order)</p></div><span class="order-badge">@OrderRules.StatusText(order.Status)</span></div>
+    <div class="order-layout"><div>
+        <div class="order-panel"><h2>@order.ServiceName</h2><dl class="order-facts"><dt>數量</dt><dd>@order.Quantity @order.Unit</dd><dt>遊戲暱稱／ID</dt><dd>@order.GameAccount</dd><dt>伺服器</dt><dd>@order.GameServer</dd><dt>聯絡方式</dt><dd>@order.Contact</dd><dt>需求</dt><dd class="order-prewrap">@(string.IsNullOrWhiteSpace(order.Requirements) ? "—" : order.Requirements)</dd><dt>優惠／報價</dt><dd>@order.DiscountLabel</dd></dl><div class="order-total-row"><span>應付金額</span><strong>@(order.PayableAmount.HasValue ? $"NT$ {order.PayableAmount:N0}" : "未定")</strong></div></div>
+        @if (!string.IsNullOrWhiteSpace(order.CustomerMessage)) { <div class="order-notice" role="status">客服訊息：@order.CustomerMessage</div> }
+        @if (order.Status == CustomerOrderStatus.AwaitingQuote)
+        { <div class="order-panel"><h2>等待客服報價</h2><p>需求已送出。請使用右側客服入口，提供訂單編號以確認內容；報價後即可在本頁查看付款資訊。</p></div> }
+        @if (canPay)
+        {
+            <div class="order-panel" id="order-payment-entry" hidden>
+                <h2>付款資訊</h2>
+                <p>@(order.Status == CustomerOrderStatus.ProofSubmitted ? "付款證明已送出，等待客服核對入帳，請勿重複付款。" : "查看收款帳戶，付款後上傳證明，客服確認入帳後安排接單。")</p>
+                <button type="button" class="primary-button" data-open-payment>查看付款資訊／上傳證明</button>
+            </div>
+            <div class="order-panel" id="order-payment-content">
+            <div class="order-payment-header"><h2 id="order-payment-title" tabindex="-1">付款資訊</h2><button type="button" class="order-payment-close" data-close-payment hidden>關閉</button></div>
+            <p class="order-muted">@OrderRules.Number(order)</p>
+            <p>應付金額 <strong class="order-total">NT$ @order.PayableAmount?.ToString("N0")</strong></p>
+            @if (order.PayableAmount == 0) { <p>此為零元訂單，等待客服確認後安排接單。</p> }
+            else
+            {
+                @if (string.IsNullOrWhiteSpace(transfer) && string.IsNullOrWhiteSpace(cardless))
+                {
+                    <p>付款帳戶尚未開放，請先聯絡客服取得付款資訊。</p>
+                    @if (discord != null) { <a class="secondary-button" href="@discord" target="_blank" rel="noopener">Discord 客服 ↗</a> }
+                    @if (line != null) { <a class="secondary-button" href="@line" target="_blank" rel="noopener">LINE 客服 ↗</a> }
+                }
+                else
+                {
+                    <form asp-action="UploadProof" asp-route-id="@order.Id" method="post" enctype="multipart/form-data" class="order-form order-payment-form">
+                        <input type="hidden" name="version" value="@order.Version" />
+                        <fieldset class="order-payment-choices" data-payment-choices>
+                            <legend>請先選擇付款方式</legend>
+                            @if (!string.IsNullOrWhiteSpace(transfer))
+                            {
+                                <label class="order-payment-option"><input type="radio" name="method" value="轉帳" required /><span><strong>銀行轉帳</strong><small>查看銀行帳號與轉帳資訊</small></span></label>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(cardless))
+                            {
+                                <label class="order-payment-option"><input type="radio" name="method" value="無卡存款" required /><span><strong>無卡存款</strong><small>查看無卡存款帳戶</small></span></label>
+                            }
+                        </fieldset>
+                        <div class="order-payment-details" data-payment-details>
+                            <button type="button" class="order-payment-back" data-payment-back hidden>← 返回選擇付款方式</button>
+                            @if (!string.IsNullOrWhiteSpace(transfer))
+                            {
+                                <div data-payment-method="轉帳">
+                                    <h3>銀行轉帳</h3><p class="order-bank">@PaymentAccount.Display(transfer)</p>
+                                    @if (order.Status == CustomerOrderStatus.AwaitingPayment && PaymentAccount.Parse(transfer) != null)
+                                    {
+                                        <div class="order-transfer-qr">
+                                            <h3>TWQR 掃碼轉帳</h3>
+                                            <img src="@Url.Action("TransferQr", new { id = order.Id })" alt="本訂單的銀行轉帳 QR Code" width="280" height="280" loading="lazy" />
+                                            <p>使用支援 TWQR 轉帳的銀行 App 掃描，帶入收款帳號及應付金額。送出前請核對帳號與金額。</p>
+                                            <a asp-action="TransferQr" asp-route-id="@order.Id" download="yomi-transfer.png" class="order-back">下載轉帳 QR Code</a>
+                                            <p class="order-muted">使用同一支手機時，可下載圖片後由支援相簿掃碼的銀行 App 讀取；若不支援，請依上方帳號手動轉帳。</p>
+                                        </div>
+                                    }
+                                    <p>轉帳完成後，請上傳付款證明，等待客服確認入帳。</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(cardless))
+                            {
+                                <div data-payment-method="無卡存款">
+                                    <h3>無卡存款</h3><p class="order-bank">@PaymentAccount.Display(cardless)</p>
+                                    <p>存款完成後，請上傳付款證明，等待客服確認入帳。</p>
+                                </div>
+                            }
+                            <div class="order-form">
+                                <label for="payment-proof">付款證明（JPG／PNG／WebP，最大 5 MB）</label><input id="payment-proof" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required />
+                                <button type="submit" class="primary-button">@(Model.HasProof ? "重新上傳付款證明" : "上傳付款證明")</button>
+                            </div>
+                        </div>
+                    </form>
+                }
+            }
+            @if (order.Status == CustomerOrderStatus.ProofSubmitted) { <p class="order-notice">付款證明已送出，客服正在核對實際入帳，請勿重複付款。</p> }
+            </div>
+            @if (order.PayableAmount > 0)
+            {
+                <dialog id="order-payment-dialog" class="order-payment-dialog" aria-labelledby="order-payment-title" data-auto-open="@(order.Status == CustomerOrderStatus.AwaitingPayment ? "true" : "false")"></dialog>
+            }
+        }
+        @if (Model.HasProof) { <a asp-action="Proof" asp-route-id="@order.Id" target="_blank" rel="noopener" class="order-back">查看已上傳的付款證明 ↗</a> }
+        @if (order.Status == CustomerOrderStatus.Recruiting) { <div class="order-notice">已確認入帳，正在安排接單員工。</div> }
+        @if (order.Status == CustomerOrderStatus.InProgress) { <div class="order-notice">接單人員已選定，服務進行中；如需協助，請聯絡客服。</div> }
+        @if (order.Status == CustomerOrderStatus.Reviewing) { <div class="order-notice">服務已回報完成，正在審核工作報單。全部通過後，消費紀錄會自動更新。</div> }
+        @if (order.Status == CustomerOrderStatus.Completed) { <div class="order-notice">此訂單已完成，消費紀錄已更新。<a href="/my-records">查看我的消費 →</a></div> }
+    </div><aside class="order-panel order-summary"><p class="replica-eyebrow">NEED A HAND?</p><h2>聯絡客服</h2><p>聯絡時請提供上方訂單編號，讓我們更快找到你的需求。</p><div class="order-contact-links">
+        @if (discord != null) { <a class="primary-button" href="@discord" target="_blank" rel="noopener">Discord 客服 ↗</a> }
+        @if (line != null) { <a class="secondary-button" href="@line" target="_blank" rel="noopener">LINE 客服 ↗</a> }
+        @if (discord == null && line == null) { <p class="order-muted">客服連結尚未設定。</p> }
+        </div><p class="order-muted">@(order.CountsForVip ? "所有工作報單審核通過後，實付金額計入 VIP 累積一次。" : "此服務會記錄消費，但不計入 VIP 累積。")</p>
+        @if (order.Status == CustomerOrderStatus.AwaitingQuote || order.Status == CustomerOrderStatus.AwaitingPayment)
+        { <form asp-action="Cancel" asp-route-id="@order.Id" method="post" onsubmit="return confirm('尚未付款才能取消，確定取消這張訂單？');"><button type="submit" class="order-cancel">取消未付款訂單</button></form> }
+    </aside></div>
+</section>
+@section Scripts { <script src="~/js/order-payment.js" asp-append-version="true"></script> }

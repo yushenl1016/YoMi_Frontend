@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using YoMi_Admin.Library.Models;
 using YoMi_Admin.Library.Models.Frontend;
 using YoMi_Admin.Library.Models.Referral;
+using YoMi_Admin.Library.Models.Orders;
 using YoMi_Frontend.ViewModels;
 
 namespace YoMi_Frontend.Services
@@ -58,6 +59,8 @@ namespace YoMi_Frontend.Services
         {
             return _db.FrontendMember.FirstOrDefaultAsync(x => x.Id == id);
         }
+
+        public Task SetBirthdayAsync(int id, DateTime birthday) => new CustomerOrderService(_db).SetBirthdayAsync(id, birthday, OrderRules.TaiwanNow);
 
         public Task<string> GetReferralCodeAsync(int memberId) => _db.ReferralAccount.AsNoTracking()
             .Where(x => x.FrontendMemberId == memberId).Select(x => x.Code).SingleOrDefaultAsync();
@@ -202,6 +205,7 @@ namespace YoMi_Frontend.Services
             var members = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
             var totals = await _db.FrontendConsumptionRecord
                 .AsNoTracking()
+                .Where(x => x.CountsForVip && !x.IsReversed)
                 .GroupBy(x => x.UserId)
                 .Select(x => new { UserId = x.Key, Total = x.Sum(y => y.Amount) })
                 .ToDictionaryAsync(x => x.UserId, x => x.Total);
@@ -223,6 +227,7 @@ namespace YoMi_Frontend.Services
             var totalUsers = await _db.FrontendMember.CountAsync();
             var totals = await _db.FrontendConsumptionRecord
                 .AsNoTracking()
+                .Where(x => !x.IsReversed)
                 .GroupBy(x => x.UserId)
                 .Select(x => x.Sum(y => y.Amount))
                 .ToListAsync();
@@ -241,7 +246,7 @@ namespace YoMi_Frontend.Services
         {
             return _db.FrontendConsumptionRecord
                 .AsNoTracking()
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId == userId && !x.IsReversed)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
@@ -250,7 +255,7 @@ namespace YoMi_Frontend.Services
         {
             return await _db.FrontendConsumptionRecord
                 .AsNoTracking()
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId == userId && x.CountsForVip && !x.IsReversed)
                 .SumAsync(x => (decimal?)x.Amount) ?? 0m;
         }
 
@@ -277,6 +282,7 @@ namespace YoMi_Frontend.Services
         {
             if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "消費金額必須大於 0");
             var record = await _db.FrontendConsumptionRecord.FindAsync(id) ?? throw new InvalidOperationException("找不到消費記錄");
+            if (record.CustomerOrderId.HasValue) throw new InvalidOperationException("訂單消費由報單審核管理，不能直接修改。");
             record.Amount = amount;
             record.Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
             record.Category = string.IsNullOrWhiteSpace(category) ? "一般消費" : category.Trim();
@@ -287,6 +293,7 @@ namespace YoMi_Frontend.Services
         public async Task DeleteConsumptionAsync(int id)
         {
             var record = await _db.FrontendConsumptionRecord.FindAsync(id) ?? throw new InvalidOperationException("找不到消費記錄");
+            if (record.CustomerOrderId.HasValue) throw new InvalidOperationException("訂單消費由報單審核管理，不能直接刪除。");
             _db.Remove(record);
             await _db.SaveChangesAsync();
         }

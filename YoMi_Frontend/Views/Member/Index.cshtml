@@ -32,6 +32,15 @@
     </div>
 </div></header>
 <section class="replica-content container">
+    <section class="replica-panel" style="padding:24px;margin-bottom:24px">
+        <h2>我的生日</h2>
+        @if (Model.Member.Birthday.HasValue) { <p>@Model.Member.Birthday.Value.ToString("yyyy/MM/dd") · 如需修改請聯絡客服。</p> }
+        else
+        {
+            <form asp-action="Birthday" method="post"><label for="member-birthday">生日（設定後由客服協助修改）</label><input id="member-birthday" type="date" name="birthday" required style="margin:12px;padding:10px;color-scheme:dark" /><button class="secondary-button" type="submit">儲存生日</button></form>
+        }
+        <a href="/orders">查看我的訂單 →</a>
+    </section>
     <div class="record-stats">
         <section class="replica-panel record-stat"><p><svg class="home-icon stat-yellow" aria-hidden="true"><use href="@(icons)#trending" /></svg>累積消費</p><strong class="stat-yellow">NT$@Model.Status.Total.ToString("N0")</strong></section>
         <section class="replica-panel record-stat"><p><svg class="home-icon stat-cyan" aria-hidden="true"><use href="@(icons)#receipt" /></svg>消費筆數</p><strong class="stat-cyan">@Model.Records.Count 筆</strong></section>
@@ -56,7 +65,7 @@
             <table><thead><tr><th>日期</th><th>類別</th><th>說明</th><th>金額</th></tr></thead><tbody>
             @foreach (var record in Model.Records)
             {
-                <tr><td>@record.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td><td><span class="replica-tag tag-recommended">@(string.IsNullOrWhiteSpace(record.Category) ? "一般消費" : record.Category)</span></td><td title="@record.Description">@(string.IsNullOrWhiteSpace(record.Description) ? "—" : record.Description)</td><td>NT$@record.Amount.ToString("N0")</td></tr>
+                <tr><td>@record.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td><td><span class="replica-tag tag-recommended">@(string.IsNullOrWhiteSpace(record.Category) ? "一般消費" : record.Category)</span>@if (!record.CountsForVip) { <small>不列入 VIP</small> }</td><td title="@record.Description">@(string.IsNullOrWhiteSpace(record.Description) ? "—" : record.Description)</td><td>NT$@record.Amount.ToString("N0")</td></tr>
             }
             </tbody></table>
         }

@@ -69,6 +69,7 @@
             <nav class="desktop-nav" aria-label="主要導覽">
                 <a class="@Active("/")" href="/">首頁</a>
                 <a class="@Active("/price")" href="/price">價目表</a>
+                <a class="@Active("/orders/new")" href="/orders/new">立即下單</a>
                 <a class="@Active("/vip")" href="/vip">VIP 等級</a>
                 <a class="@Active("/my-records")" href="/my-records">我的消費</a>
                 <a href="@chrome.Get("scoreboard_url", "https://yumi-live-score-board.manus.space/")" target="_blank" rel="noopener">♜ 小小巨人</a>
@@ -103,6 +104,8 @@
                 <nav aria-label="行動版導覽">
                     <a href="/">首頁</a>
                     <a href="/price">價目表</a>
+                    <a href="/orders/new">立即下單</a>
+                    <a href="/orders">我的訂單</a>
                     <a href="/vip">VIP 等級</a>
                     <a href="/my-records">我的消費</a>
                     @if (isHome)

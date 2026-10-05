@@ -157,3 +157,4 @@
     .reference-page .replica-records th, .reference-page .replica-records td { padding-inline: 6px; }
 }
 @media (prefers-reduced-motion: reduce) { .reference-page .replica-progress .rainbow-progress { animation: none; } .reference-page .replica-tier, .reference-page .replica-progress > span { transition: none; } }
+.price-order-link{display:block;color:#74e3ed!important;font-size:14px;margin-top:8px;text-align:right;text-decoration:none}.price-order-link:focus-visible{outline:2px solid currentColor;outline-offset:4px}

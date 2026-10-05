@@ -6,6 +6,7 @@
     <div class="member-menu-panel">
         <strong>@User.Identity.Name</strong>
         <partial name="_ReferralCode" />
+        <a class="member-referrer-link" href="/orders">我的訂單</a>
         <a class="member-referrer-link" href="@Url.Action("Index", "Member")#my-referrer">我的推薦人</a>
     </div>
 </details>

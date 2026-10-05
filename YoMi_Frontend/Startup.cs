@@ -41,6 +41,7 @@ namespace YoMi_Frontend
             services.AddDbContext<DBContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<PortalService>();
+            services.AddScoped<YoMi_Admin.Library.Models.Orders.CustomerOrderService>();
             services.AddScoped<GoogleMemberLogin>();
             // Legacy password login/registration retained in AccountController but disabled.
             // services.AddScoped<IPasswordHasher<FrontendMember>, PasswordHasher<FrontendMember>>();

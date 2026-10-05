@@ -1,0 +1,17 @@
+@using YoMi_Admin.Library.Models.Orders
+@model MyOrdersViewModel
+@{ ViewData["Title"] = Model.History ? "過去訂單" : "進行中訂單"; ViewData["ReferencePage"] = true; ViewData["PageClass"] = "order-page"; }
+@section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
+<section class="container order-content">
+    <div class="order-heading"><div><p class="replica-eyebrow">MY ORDERS</p><h1>@ViewData["Title"]</h1></div></div>
+    <partial name="_Navigation" model='@(Model.History ? "history" : "active")' />
+    <p class="order-muted">@(Model.History ? "查看已完成與已取消的訂單。" : "查看待報價、待付款、派單、服務與報單審核中的訂單。")</p>
+    @if (Model.Orders.Count == 0) { <div class="order-panel"><h2>@(Model.History ? "目前沒有過去訂單" : "目前沒有進行中訂單")</h2><p class="order-muted">選擇喜歡的服務，或自行提出想打的單。</p><a asp-action="New">前往下單 →</a></div> }
+    <div class="order-list">
+    @foreach (var order in Model.Orders)
+    {
+        <a class="order-panel order-list-item" asp-action="Detail" asp-route-id="@order.Id"><div><span class="order-badge">@OrderRules.StatusText(order.Status)</span><h2>@order.ServiceName × @order.Quantity @order.Unit</h2><small class="order-muted">@OrderRules.Number(order) · @order.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small></div><strong>@(order.PayableAmount.HasValue ? $"NT$ {order.PayableAmount:N0}" : "價格未定") <span aria-hidden="true">→</span></strong></a>
+    }
+    </div>
+    <nav class="order-actions" aria-label="訂單分頁">@if (Model.Page > 1) { <a asp-action="Index" asp-route-history="@Model.History" asp-route-page="@(Model.Page - 1)">← 上一頁</a> }<span>第 @Model.Page 頁</span>@if (Model.HasNext) { <a asp-action="Index" asp-route-history="@Model.History" asp-route-page="@(Model.Page + 1)">下一頁 →</a> }</nav>
+</section>

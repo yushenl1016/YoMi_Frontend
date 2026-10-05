@@ -106,5 +106,20 @@ namespace YoMi_Frontend.Controllers
             TempData["Success"] = "名稱已更新";
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpPost("birthday"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> Birthday(DateTime birthday)
+        {
+            try
+            {
+                if (!ModelState.IsValid) throw new ArgumentException("請輸入有效生日。");
+                await _portal.SetBirthdayAsync(AuthCookie.GetMemberId(User), birthday);
+                TempData["Success"] = "生日已設定，之後如需修改請聯絡客服。";
+            }
+            catch (ArgumentException ex) { TempData["Error"] = ex.Message; }
+            catch (Exception ex)
+            { _logger.LogError(ex, "Member birthday save failed"); TempData["Error"] = "生日儲存失敗，請稍後再試。"; }
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

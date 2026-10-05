@@ -1,0 +1,6 @@
+@model string
+<nav class="order-tabs" aria-label="訂單導覽">
+    <a asp-action="New" aria-current="@(Model == "new" ? "page" : null)">立即下單</a>
+    <a asp-action="Index" asp-route-history="false" aria-current="@(Model == "active" ? "page" : null)">進行中訂單</a>
+    <a asp-action="Index" asp-route-history="true" aria-current="@(Model == "history" ? "page" : null)">過去訂單</a>
+</nav>

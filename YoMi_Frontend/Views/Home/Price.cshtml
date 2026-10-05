@@ -31,7 +31,7 @@
         @if (Model.Items.Count == 0) { <div class="replica-empty">尚無服務項目</div> }
         @foreach (var item in Model.Items)
         {
-            <article class="replica-price-row"><div><h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><strong>@item.Price</strong></article>
+            <article class="replica-price-row"><div><h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><div><strong>@item.Price</strong>@if (item.IsOrderable) { <a class="price-order-link" href="@Url.Action("New", "Orders", new { itemId = item.Id })">@(item.OrderUnitPrice.HasValue ? "立即下單 →" : "特殊單洽詢 →")</a> }</div></article>
         }
     </div>
     <aside class="replica-notice replica-panel"><h3>ⓘ 注意事項</h3><ul><li>所有價格以新台幣（NT$）計算，實際報價依需求與難度調整。</li><li>VIP 折扣適用於一般消費項目，趣味單、代解 3x3、代儲值為固定價位不打折。</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積金額計算。</li><li>如有特殊需求或自訂服務，請直接洽詢客服報價。</li></ul></aside>

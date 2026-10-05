@@ -1,0 +1,17 @@
+@model OrderFormViewModel
+@{ ViewData["Title"] = "確認訂單"; ViewData["ReferencePage"] = true; ViewData["PageClass"] = "order-page"; var order = Model.Preview; var input = Model.Input; }
+@section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
+<section class="container order-content order-narrow">
+    <p class="replica-eyebrow">REVIEW YOUR ORDER</p><h1>確認訂單</h1>
+    <div class="order-panel"><h2>@order.ServiceName</h2><dl class="order-facts"><dt>數量</dt><dd>@order.Quantity @order.Unit</dd><dt>原價</dt><dd>NT$ @order.OriginalAmount?.ToString("N0")</dd><dt>適用優惠</dt><dd>@order.DiscountLabel</dd><dt>遊戲帳號</dt><dd>@order.GameAccount（@order.GameServer）</dd><dt>聯絡帳號</dt><dd>@order.Contact</dd></dl>
+        @if (!string.IsNullOrWhiteSpace(order.Requirements)) { <p class="order-prewrap">@order.Requirements</p> }
+        <div class="order-total-row"><span>應付金額</span><strong>NT$ @order.PayableAmount?.ToString("N0")</strong></div>
+        <p class="order-muted">確認後建立訂單，接著查看付款帳戶並上傳付款證明。客服確認入帳後安排接單。</p>
+        <form asp-action="Create" method="post">
+            <input type="hidden" name="RequestId" value="@input.RequestId" /><input type="hidden" name="ItemId" value="@input.ItemId" /><input type="hidden" name="Quantity" value="@input.Quantity" />
+            <input type="hidden" name="GameAccount" value="@input.GameAccount" /><input type="hidden" name="GameServer" value="@input.GameServer" /><input type="hidden" name="Contact" value="@input.Contact" /><input type="hidden" name="Requirements" value="@input.Requirements" />
+            <input type="hidden" name="ExpectedAmount" value="@input.ExpectedAmount" /><input type="hidden" name="PriceVersion" value="@input.PriceVersion" />
+            <div class="order-actions"><button type="submit" class="primary-button">確認下單</button><a class="secondary-button" asp-action="New" asp-route-itemId="@input.ItemId">重新填寫</a></div>
+        </form>
+    </div>
+</section>
