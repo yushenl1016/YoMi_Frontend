@@ -9,7 +9,7 @@
 }
 @section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
 <section class="container order-content">
-    <a asp-action="Index" asp-route-history="@(order.Status == CustomerOrderStatus.Completed || order.Status == CustomerOrderStatus.Cancelled)" class="order-back">← 我的訂單</a><div class="order-heading"><div><p class="replica-eyebrow">YOUR ORDER</p><h1>訂單詳情</h1><p class="order-muted">@OrderRules.Number(order)</p></div><span class="order-badge">@OrderRules.StatusText(order.Status)</span></div>
+    <a asp-action="Index" asp-route-history="@(order.Status == CustomerOrderStatus.Reviewing || order.Status == CustomerOrderStatus.Completed || order.Status == CustomerOrderStatus.Cancelled)" class="order-back">← 我的訂單</a><div class="order-heading"><div><p class="replica-eyebrow">YOUR ORDER</p><h1>訂單詳情</h1><p class="order-muted">@OrderRules.Number(order)</p></div><span class="order-badge">@OrderRules.CustomerStatusText(order.Status)</span></div>
     <div class="order-layout"><div>
         <div class="order-panel"><h2>@order.ServiceName</h2><dl class="order-facts"><dt>數量</dt><dd>@order.Quantity @order.Unit</dd><dt>遊戲暱稱／ID</dt><dd>@order.GameAccount</dd><dt>伺服器</dt><dd>@order.GameServer</dd><dt>聯絡方式</dt><dd>@order.Contact</dd><dt>需求</dt><dd class="order-prewrap">@(string.IsNullOrWhiteSpace(order.Requirements) ? "—" : order.Requirements)</dd><dt>優惠／報價</dt><dd>@order.DiscountLabel</dd></dl><div class="order-total-row"><span>應付金額</span><strong>@(order.PayableAmount.HasValue ? $"NT$ {order.PayableAmount:N0}" : "未定")</strong></div></div>
         @if (!string.IsNullOrWhiteSpace(order.CustomerMessage)) { <div class="order-notice" role="status">客服訊息：@order.CustomerMessage</div> }
@@ -94,13 +94,13 @@
         @if (Model.HasProof) { <a asp-action="Proof" asp-route-id="@order.Id" target="_blank" rel="noopener" class="order-back">查看已上傳的付款證明 ↗</a> }
         @if (order.Status == CustomerOrderStatus.Recruiting) { <div class="order-notice">已確認入帳，正在安排接單員工。</div> }
         @if (order.Status == CustomerOrderStatus.InProgress) { <div class="order-notice">接單人員已選定，服務進行中；如需協助，請聯絡客服。</div> }
-        @if (order.Status == CustomerOrderStatus.Reviewing) { <div class="order-notice">服務已回報完成，正在審核工作報單。全部通過後，消費紀錄會自動更新。</div> }
+        @if (order.Status == CustomerOrderStatus.Reviewing) { <div class="order-notice">此訂單已完成，感謝您的使用。</div> }
         @if (order.Status == CustomerOrderStatus.Completed) { <div class="order-notice">此訂單已完成，消費紀錄已更新。<a href="/my-records">查看我的消費 →</a></div> }
     </div><aside class="order-panel order-summary"><p class="replica-eyebrow">NEED A HAND?</p><h2>聯絡客服</h2><p>聯絡時請提供上方訂單編號，讓我們更快找到你的需求。</p><div class="order-contact-links">
         @if (discord != null) { <a class="primary-button" href="@discord" target="_blank" rel="noopener">Discord 客服 ↗</a> }
         @if (line != null) { <a class="secondary-button" href="@line" target="_blank" rel="noopener">LINE 客服 ↗</a> }
         @if (discord == null && line == null) { <p class="order-muted">客服連結尚未設定。</p> }
-        </div><p class="order-muted">@(order.CountsForVip ? "所有工作報單審核通過後，實付金額計入 VIP 累積一次。" : "此服務會記錄消費，但不計入 VIP 累積。")</p>
+        </div><p class="order-muted">@(order.CountsForVip ? "此訂單的實付金額可計入 VIP 累積。" : "此服務會記錄消費，但不計入 VIP 累積。")</p>
         @if (order.Status == CustomerOrderStatus.AwaitingQuote || order.Status == CustomerOrderStatus.AwaitingPayment)
         { <form asp-action="Cancel" asp-route-id="@order.Id" method="post" onsubmit="return confirm('尚未付款才能取消，確定取消這張訂單？');"><button type="submit" class="order-cancel">取消未付款訂單</button></form> }
     </aside></div>
