@@ -9,6 +9,7 @@ namespace YoMi_Frontend.ViewModels
     {
         public IReadOnlyDictionary<string, string> Settings { get; init; } = new Dictionary<string, string>();
         public FrontendBackgroundAsset Background { get; init; }
+        public IReadOnlyList<FrontendSiteSetting> BattleLinks { get; init; } = Array.Empty<FrontendSiteSetting>();
 
         public string Get(string key, string fallback = "") =>
             Settings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
@@ -46,6 +47,24 @@ namespace YoMi_Frontend.ViewModels
     {
         public string Name { get; init; }
         public string Code { get; init; }
+    }
+
+    public sealed class MemberCoinsViewModel
+    {
+        public decimal ConfirmedAmount { get; set; }
+        public decimal PendingAmount { get; set; }
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / 50m));
+        public IReadOnlyList<MemberCoinRewardViewModel> Rewards { get; set; } = Array.Empty<MemberCoinRewardViewModel>();
+    }
+
+    public sealed class MemberCoinRewardViewModel
+    {
+        public DateTime WorkDate { get; set; }
+        public bool IsExperienceOrder { get; set; }
+        public decimal Amount { get; set; }
+        public string RewardStatus { get; set; }
     }
 
     public sealed class AccountViewModel

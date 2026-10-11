@@ -1,0 +1,47 @@
+@model MemberCoinsViewModel
+@{
+    ViewData["Title"] = "我的悠咪幣";
+    ViewData["ReferencePage"] = true;
+    ViewData["PageClass"] = "coins-page";
+}
+<header class="replica-heading"><div class="container">
+    <p class="replica-eyebrow">MY YOMI COINS</p><h1>我的悠咪幣</h1>
+    <p>邀請朋友使用你的推薦碼，累積悠咪幣。1 元推薦獎勵＝1 悠咪幣，每筆不足 1 幣的部分無條件進位，再加總。</p>
+    <a asp-action="Index">← 返回會員頁面</a>
+</div></header>
+<section class="replica-content container">
+    <div class="record-stats">
+        <section class="replica-panel record-stat"><p>已確認悠咪幣</p><strong class="stat-yellow">@Model.ConfirmedAmount.ToString("N0")</strong></section>
+        <section class="replica-panel record-stat"><p>待確認悠咪幣</p><strong class="stat-cyan">@Model.PendingAmount.ToString("N0")</strong></section>
+        <section class="replica-panel record-stat"><p>獎勵紀錄</p><strong>@Model.TotalCount 筆</strong></section>
+    </div>
+    <p>目前提供累積紀錄查詢，尚未開放折抵或提領。待確認與已取消的紀錄不計入已確認悠咪幣。</p>
+    <section class="replica-records replica-panel">
+        <header><h2>悠咪幣明細</h2><span class="replica-tag">@Model.TotalCount 筆</span></header>
+        @if (Model.Rewards.Count == 0)
+        {
+            <div class="replica-empty"><p>尚無悠咪幣紀錄</p><a asp-action="Index">查看我的推薦碼 →</a></div>
+        }
+        else
+        {
+            <div class="coin-table-scroll" tabindex="0" role="region" aria-label="悠咪幣明細表格">
+                <table><thead><tr><th scope="col">日期</th><th scope="col">來源</th><th scope="col">狀態</th><th scope="col">悠咪幣</th></tr></thead><tbody>
+                @foreach (var reward in Model.Rewards)
+                {
+                    <tr>
+                        <td>@reward.WorkDate.ToString("yyyy/MM/dd")</td>
+                        <td>@(reward.IsExperienceOrder ? "推薦體驗獎勵" : "推薦消費獎勵")</td>
+                        <td>@(reward.RewardStatus == "confirmed" ? "已確認" : reward.RewardStatus == "cancelled" ? "已取消" : "待確認")</td>
+                        <td>@reward.Amount.ToString("N0")</td>
+                    </tr>
+                }
+                </tbody></table>
+            </div>
+        }
+    </section>
+    <nav class="coin-pagination" aria-label="悠咪幣分頁">
+        @if (Model.Page > 1) { <a asp-action="Coins" asp-route-page="@(Model.Page - 1)">← 上一頁</a> }
+        <span>第 @Model.Page / @Model.TotalPages 頁</span>
+        @if (Model.Page < Model.TotalPages) { <a asp-action="Coins" asp-route-page="@(Model.Page + 1)">下一頁 →</a> }
+    </nav>
+</section>

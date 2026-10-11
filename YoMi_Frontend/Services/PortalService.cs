@@ -1,3 +1,4 @@
+using Dapper;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,7 @@ namespace YoMi_Frontend.Services
         {
             return await _db.FrontendSiteSetting
                 .AsNoTracking()
+                .Where(x => x.Key != "scoreboard_url" && !x.Key.StartsWith("battle_link_"))
                 .ToDictionaryAsync(x => x.Key, x => x.Value);
         }
 
@@ -32,6 +34,9 @@ namespace YoMi_Frontend.Services
             return new SiteChromeViewModel
             {
                 Settings = await GetSettingsAsync(),
+                BattleLinks = await _db.FrontendSiteSetting.AsNoTracking()
+                    .Where(x => x.Key == "scoreboard_url" || x.Key.StartsWith("battle_link_"))
+                    .OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToListAsync(),
                 Background = await _db.FrontendBackgroundAsset
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.IsActive)
@@ -64,6 +69,24 @@ namespace YoMi_Frontend.Services
 
         public Task<string> GetReferralCodeAsync(int memberId) => _db.ReferralAccount.AsNoTracking()
             .Where(x => x.FrontendMemberId == memberId).Select(x => x.Code).SingleOrDefaultAsync();
+
+        public async Task<MemberCoinsViewModel> GetCoinsAsync(int memberId, int page = 1)
+        {
+            var connection = _db.Database.GetDbConnection();
+            var rewards = $@"({ReferralRewardQuery.States}) rewards
+                WHERE ReferralAccountId IN (SELECT Id FROM ReferralAccount WHERE FrontendMemberId = @MemberId)";
+            var model = await connection.QuerySingleAsync<MemberCoinsViewModel>($@"
+                SELECT COUNT(*) AS TotalCount,
+                       COALESCE(SUM(CASE WHEN RewardStatus = 'confirmed' THEN CEILING(Amount) ELSE 0 END), 0) AS ConfirmedAmount,
+                       COALESCE(SUM(CASE WHEN RewardStatus = 'pending' THEN CEILING(Amount) ELSE 0 END), 0) AS PendingAmount
+                  FROM {rewards}", new { MemberId = memberId });
+            model.Page = Math.Clamp(page, 1, model.TotalPages);
+            model.Rewards = (await connection.QueryAsync<MemberCoinRewardViewModel>($@"
+                SELECT WorkDate, IsExperienceOrder, CEILING(Amount) AS Amount, RewardStatus FROM {rewards}
+                 ORDER BY CreatedAt DESC, Id OFFSET @Skip ROWS FETCH NEXT 50 ROWS ONLY",
+                new { MemberId = memberId, Skip = (model.Page - 1) * 50 })).ToList();
+            return model;
+        }
 
         public async Task<MemberReferrerViewModel> GetReferrerAsync(int memberId)
         {

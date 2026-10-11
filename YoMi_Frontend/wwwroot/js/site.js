@@ -110,12 +110,12 @@ document.querySelectorAll('[data-referral]').forEach(panel => {
     });
 });
 
-document.querySelectorAll('[data-member-menu]').forEach(menu => {
-    menu.querySelector('.member-referrer-link')?.addEventListener('click', () => {
+document.querySelectorAll('[data-member-menu], [data-battle-menu]').forEach(menu => {
+    menu.querySelectorAll('.member-referrer-link, .battle-menu-link').forEach(link => link.addEventListener('click', () => {
         menu.open = false;
         const mobileNav = menu.closest('.mobile-nav');
         if (mobileNav) mobileNav.open = false;
-    });
+    }));
     menu.addEventListener('keydown', event => {
         if (event.key !== 'Escape' || !menu.open) return;
         event.preventDefault();

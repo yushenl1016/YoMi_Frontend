@@ -5,8 +5,9 @@
     </summary>
     <div class="member-menu-panel">
         <strong>@User.Identity.Name</strong>
-        @* 推薦功能暫不在前台提供入口。 <partial name="_ReferralCode" /> *@
+        <partial name="_ReferralCode" />
         <a class="member-referrer-link" href="/orders">我的訂單</a>
-        @* <a class="member-referrer-link" href="@Url.Action("Index", "Member")#my-referrer">我的推薦人</a> *@
+        <a class="member-referrer-link" asp-controller="Member" asp-action="Coins">我的悠咪幣</a>
+        <a class="member-referrer-link" href="@Url.Action("Index", "Member")#my-referrer">我的推薦人</a>
     </div>
 </details>

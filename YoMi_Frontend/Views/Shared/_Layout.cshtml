@@ -72,7 +72,7 @@
                 <a class="@Active("/orders/new")" href="/orders/new">立即下單</a>
                 <a class="@Active("/vip")" href="/vip">VIP 等級</a>
                 <a class="@Active("/my-records")" href="/my-records">我的消費</a>
-                <a href="@chrome.Get("scoreboard_url", "https://yumi-live-score-board.manus.space/")" target="_blank" rel="noopener">♜ 小小巨人</a>
+                <partial name="_BattleMenu" model="chrome" />
             </nav>
 
             <div class="header-actions">
@@ -108,6 +108,7 @@
                     <a href="/orders">我的訂單</a>
                     <a href="/vip">VIP 等級</a>
                     <a href="/my-records">我的消費</a>
+                    <partial name="_BattleMenu" model="chrome" />
                     @if (isHome)
                     {
                         <partial name="_HomeVolume" />

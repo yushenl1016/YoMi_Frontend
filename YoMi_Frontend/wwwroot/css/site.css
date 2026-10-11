@@ -100,7 +100,8 @@ a {
     flex: 1;
 }
 
-.desktop-nav a {
+.desktop-nav a,
+.desktop-nav .battle-menu > summary {
     position: relative;
     display: flex;
     align-items: center;
@@ -113,6 +114,7 @@ a {
 }
 
 .desktop-nav a:hover,
+.desktop-nav .battle-menu > summary:hover,
 .desktop-nav a.is-active {
     color: var(--yellow);
 }
@@ -678,12 +680,20 @@ a {
     white-space: nowrap;
 }
 
-.member-menu { position: relative; }
-.member-menu > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
-.member-menu > summary::-webkit-details-marker { display: none; }
+.member-menu, .battle-menu { position: relative; }
+.member-menu > summary, .battle-menu > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
+.member-menu > summary::-webkit-details-marker, .battle-menu > summary::-webkit-details-marker { display: none; }
 .member-menu > summary .home-icon { width: 12px; height: 12px; flex-shrink: 0; }
-.member-menu > summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
-.member-menu-panel { position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; width: min(280px, calc(100vw - 40px)); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 30px #0006; }
+.member-menu > summary:focus-visible, .battle-menu > summary:focus-visible, .battle-menu-link:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.member-menu-panel, .battle-menu-panel { position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; width: min(280px, calc(100vw - 40px)); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 30px #0006; }
+.battle-menu-panel { width: min(220px, calc(100vw - 40px)); padding: 6px; }
+.battle-menu-panel > a { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.battle-menu[open] > summary { color: var(--yellow); }
+.desktop-nav .battle-menu > summary { height: 100%; white-space: nowrap; }
+.desktop-nav .battle-menu-panel > a { padding: 10px 12px; }
+.mobile-nav .battle-menu > summary { display: flex; justify-content: space-between; width: 100%; border: 0; padding: 10px 12px; color: var(--muted); }
+.mobile-nav .battle-menu[open] > summary { color: var(--yellow); }
+.mobile-nav .battle-menu-panel { position: static; width: 100%; padding: 0 0 0 16px; border: 0; border-left: 1px solid var(--border); border-radius: 0; background: transparent; box-shadow: none; }
 .member-menu-panel > strong { display: block; margin-bottom: 12px; color: var(--text); overflow-wrap: anywhere; }
 .member-referral-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
 .member-referral-actions button { padding: 4px 0 4px 12px; border: 0; background: none; color: var(--cyan); cursor: pointer; font: inherit; }

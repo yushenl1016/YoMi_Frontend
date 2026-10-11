@@ -14,7 +14,7 @@ class Element {
 function widget(dropdown) {
     const menu = dropdown ? new Element() : null;
     const summary = new Element(), code = new Element(), copy = new Element(), status = new Element(), link = new Element();
-    const mobileNav = new Element();
+    const mobileNav = new Element(), orderLink = new Element(), coinsLink = new Element();
     const panel = {
         dataset: {codeUrl: '/virtual-site/my-records/referral-code'},
         closest: () => menu,
@@ -22,20 +22,21 @@ function widget(dropdown) {
     };
     if (menu) {
         menu.querySelector = selector => selector === '.member-referrer-link' ? link : summary;
+        menu.querySelectorAll = selector => selector === '.member-referrer-link, .battle-menu-link' ? [orderLink, coinsLink, link] : [];
         menu.contains = target => target === copy || target === summary;
         menu.closest = () => mobileNav;
     }
-    return {menu, summary, panel, code, copy, status, link, mobileNav};
+    return {menu, summary, panel, code, copy, status, link, orderLink, coinsLink, mobileNav};
 }
 async function run() {
-    const desktop = widget(true), mobile = widget(true), inline = widget(false);
+    const desktop = widget(true), mobile = widget(true), inline = widget(false), battle = widget(true);
     const widgets = [desktop, mobile, inline], calls = [], copied = [], clickHandlers = [];
     let responseOk = false, resolvePending;
     const navigator = {clipboard: {writeText: async text => { copied.push(text); }}};
     const document = {
         querySelector: () => null,
         querySelectorAll: selector => selector === '[data-referral]' ? widgets.map(x => x.panel)
-            : selector === '[data-member-menu]' ? [desktop.menu, mobile.menu] : [],
+            : selector === '[data-member-menu], [data-battle-menu]' ? [desktop.menu, mobile.menu, battle.menu] : [],
         addEventListener: (event, handler) => { assert.equal(event, 'click'); clickHandlers.push(handler); }
     };
     vm.runInNewContext(source, {document, navigator, fetch: async (url, options) => {
@@ -78,9 +79,22 @@ async function run() {
     assert(mobile.menu.open, 'clicking within a menu keeps it open');
     clickHandlers.forEach(handler => handler({target: {}}));
     assert(!mobile.menu.open, 'outside click closes menu');
-    mobile.menu.open = mobile.mobileNav.open = true;
-    mobile.link.fire('click');
-    assert(!mobile.menu.open && !mobile.mobileNav.open, 'referrer anchor closes both menus so the target card is visible');
+    for (const link of [mobile.orderLink, mobile.coinsLink, mobile.link]) {
+        mobile.menu.open = mobile.mobileNav.open = true;
+        link.fire('click');
+        assert(!mobile.menu.open && !mobile.mobileNav.open, 'order, coins and referrer links close the menus so their target is visible');
+    }
+    battle.menu.open = true;
+    clickHandlers.forEach(handler => handler({target: battle.summary}));
+    assert(battle.menu.open, 'clicking the battle menu keeps it open');
+    clickHandlers.forEach(handler => handler({target: {}}));
+    assert(!battle.menu.open, 'outside click closes the battle menu');
+    battle.menu.open = true;
+    battle.menu.fire('keydown', {key: 'Escape', preventDefault() {}, stopPropagation() {}});
+    assert(!battle.menu.open && battle.summary.focused, 'Escape closes the battle menu and restores focus');
+    battle.menu.open = battle.mobileNav.open = true;
+    battle.link.fire('click');
+    assert(!battle.menu.open && !battle.mobileNav.open, 'battle links close the mobile navigation');
     // A fresh page renders the same component inline and copies without opening a menu.
     const inlineOnly = widget(false);
     document.querySelectorAll = selector => selector === '[data-referral]' ? [inlineOnly.panel] : [];
@@ -90,6 +104,6 @@ async function run() {
     assert.equal(inlineOnly.code.textContent, '0123456789ABCDEF');
     await inlineOnly.copy.fire('click', {stopPropagation() {}});
     assert.equal(copied.length, 2);
-    console.log('PASS: desktop/mobile menu, inline display, lazy loading, retry, pending requests, code reuse, copy/fallback, Escape and outside click');
+    console.log('PASS: desktop/mobile member and battle menus, inline display, lazy loading, retry, pending requests, code reuse, copy/fallback, Escape and outside click');
 }
 run().catch(error => {console.error(error); process.exitCode = 1;});

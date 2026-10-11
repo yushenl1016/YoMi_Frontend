@@ -1,0 +1,13 @@
+@model SiteChromeViewModel
+@if (Model.BattleLinks.Count > 0)
+{
+<details class="battle-menu" data-battle-menu>
+    <summary>即時戰況 <span aria-hidden="true">▾</span></summary>
+    <div class="battle-menu-panel">
+        @foreach (var link in Model.BattleLinks)
+        {
+            <a class="battle-menu-link" href="@link.Value" target="_blank" rel="noopener" aria-label="@(link.BattleLinkName)（另開分頁）" title="另開分頁">@link.BattleLinkName <span aria-hidden="true">↗</span></a>
+        }
+    </div>
+</details>
+}

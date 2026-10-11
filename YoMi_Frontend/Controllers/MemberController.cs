@@ -39,8 +39,18 @@ namespace YoMi_Frontend.Controllers
             {
                 Member = member,
                 Records = await _portal.GetConsumptionRecordsAsync(id),
-                Status = VipRules.GetStatus(total)
+                Status = VipRules.GetStatus(total),
+                Referrer = await _portal.GetReferrerAsync(id)
             });
+        }
+
+        [HttpGet("coins"), ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+        public async Task<IActionResult> Coins(int page = 1)
+        {
+            var id = AuthCookie.GetMemberId(User);
+            if (id <= 0) return Unauthorized();
+            if (await _portal.FindMemberAsync(id) == null) return NotFound();
+            return View(await _portal.GetCoinsAsync(id, page));
         }
 
         [HttpGet("referral-code"), ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]

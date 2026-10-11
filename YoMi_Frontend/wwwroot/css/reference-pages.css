@@ -139,6 +139,9 @@
 .reference-page .replica-records td:last-child { color: var(--yellow); font: 700 14px var(--display-font); }
 .reference-page .replica-records td:nth-child(3) { color: oklch(.65 .01 200); }
 .reference-page .replica-records tbody tr:hover { background: oklch(.85 .20 195 / .06); }
+.coin-table-scroll { overflow-x: auto; }
+.coin-table-scroll table { min-width: 480px; }
+.coin-pagination { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: center; margin-top: 24px; }
 .reference-page .flash { position: relative; z-index: 55; margin-top: 60px; }
 @media (max-width: 1023px) { .reference-page .discount-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media (max-width: 767px) {
