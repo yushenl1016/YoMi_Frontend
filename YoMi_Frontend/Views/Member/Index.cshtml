@@ -14,6 +14,10 @@
         <button type="submit" aria-label="儲存名稱" title="儲存名稱"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#check" /></svg></button>
         <button type="button" data-cancel-name aria-label="取消編輯" title="取消編輯"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#close" /></svg></button>
     </form>
+    @if (string.IsNullOrEmpty(Model.Member.EmailPasswordHash))
+    {
+        <p><a href="/account/password" class="member-referrer-link">設定 Email 登入密碼 →</a></p>
+    }
     <div class="member-referral-grid">
         <section class="member-referral-card" aria-label="我的推薦碼"><partial name="_ReferralCode" /><a class="member-referrer-link" asp-action="Coins">查看我的悠咪幣 →</a></section>
         <section class="member-referral-card member-referrer-card" id="my-referrer" aria-labelledby="my-referrer-title">

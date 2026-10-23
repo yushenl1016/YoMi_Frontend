@@ -21,16 +21,26 @@
             video.muted = muted;
         }
     };
+    const play = () => {
+        if (!video || muted) return;
+        video.play().catch(() => {
+            muted = true;
+            render();
+            document.querySelectorAll("[data-home-volume-label]").forEach(label => { label.textContent = "無法播放，請再試"; });
+        });
+    };
     controls.forEach(input => input.addEventListener("input", () => {
         volume = Math.min(100, Math.max(0, Number(input.value) || 0));
         muted = volume === 0;
         render();
+        play();
     }));
     document.querySelectorAll("[data-home-mute]").forEach(button => {
         button.addEventListener("click", () => {
             if (muted && volume === 0) volume = 50;
             muted = !muted;
             render();
+            play();
         });
     });
     // Keep the inline mobile controls visible, independent of the desktop popover.

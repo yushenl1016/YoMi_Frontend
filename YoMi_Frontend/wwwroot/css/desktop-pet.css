@@ -1,0 +1,53 @@
+.desktop-pet-page .pet-download-content { padding-top: 36px; }
+.pet-hero { display:grid; grid-template-columns:1.25fr 1fr; align-items:center; gap:44px; padding:12px 16px 48px; }
+.pet-hero-copy h2 { margin:20px 0; font-size:clamp(40px,4.5vw,62px); font-weight:900; letter-spacing:.01em; line-height:1.2; }
+.pet-hero-copy h2 span { color:var(--cyan); text-shadow:0 0 32px rgb(0 245 255 / .18); }
+.pet-lead { max-width:490px; font-size:17px; color:#b7b9c9; line-height:1.9; margin-bottom:24px; }
+.pet-platform { display:flex; align-items:center; gap:14px; color:var(--muted); font-size:12px; flex-wrap:wrap; margin-bottom:20px; }
+.pet-download-button { display:inline-flex; gap:16px; align-items:center; justify-content:center; padding:18px 28px; color:#06121a; background:var(--cyan); font-weight:800; font-size:18px; border:1px solid var(--cyan); border-radius:3px; box-shadow:0 5px 32px rgb(0 245 255 / .15); transition:background .2s,transform .2s; }
+.pet-download-button:hover { background:#7effff; transform:translateY(-2px); }
+.pet-download-button > span:first-child { font-size:26px; line-height:1; }
+.pet-button-size { font-size:12px; opacity:.75; padding-left:12px; border-left:1px solid rgb(0 0 0 / .25); }
+.pet-release-meta { color:var(--muted); font-size:12px; margin:14px 0 16px; }
+.pet-release-meta span { margin:0 5px; opacity:.4; }
+.pet-help-link { color:#c1c5d7; font-size:13px; border-bottom:1px solid #54576b; padding-bottom:3px; }
+.pet-help-link span { color:var(--cyan); margin-left:8px; }
+.pet-art { position:relative; padding:22px 0 4px; display:flex; flex-direction:column; align-items:center; }
+.pet-art::before { content:""; position:absolute; inset:30px -5px 20px; background:radial-gradient(ellipse,rgb(137 103 245 / .25),transparent 68%); pointer-events:none; }
+.pet-art img { position:relative; width:100%; height:auto; max-width:390px; filter:drop-shadow(0 16px 30px rgb(102 65 173 / .2)); }
+.pet-art-orbit { position:absolute; width:85%; aspect-ratio:1; border:1px solid rgb(176 148 255 / .14); border-radius:50%; top:16px; }
+.pet-art-label { position:relative; font:9px var(--display-font); letter-spacing:.23em; color:#9691b7; margin-top:20px; }
+.pet-build-note { padding:18px 22px; border:1px solid rgb(255 230 0 / .24); border-left:3px solid var(--yellow); background:rgb(255 230 0 / .035); margin-bottom:30px; }
+.pet-build-note strong { color:var(--yellow); font-size:13px; }
+.pet-build-note p { margin:5px 0 0; color:#adaebe; font-size:13px; line-height:1.8; }
+.pet-features { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:44px; }
+.pet-features article { padding:24px 22px; }
+.pet-features article > span { font-size:25px; color:var(--cyan); }
+.pet-features h3 { margin:12px 0 8px; font-size:15px; color:#e5e7ef; }
+.pet-features p { margin:0; font-size:13px; line-height:1.9; color:#989bad; }
+.pet-guides { display:grid; grid-template-columns:1fr 1fr; gap:20px; scroll-margin-top:90px; }
+.pet-guides article,.pet-faq,.pet-integrity { padding:28px; }
+.pet-guides h2,.pet-faq h2,.pet-integrity h2 { margin:10px 0 18px; font-size:20px; }
+.pet-guides ol { counter-reset:steps; list-style:none; margin:24px 0 0; padding:0; }
+.pet-guides li { counter-increment:steps; padding-left:42px; position:relative; margin-top:20px; }
+.pet-guides li::before { content:counter(steps,decimal-leading-zero); position:absolute; left:0; top:0; font:14px/24px var(--display-font); color:var(--cyan); }
+.pet-guides strong { font-size:14px; }
+.pet-guides p,.pet-faq p { color:#989bad; font-size:13px; line-height:1.9; margin:6px 0 0; }
+.pet-guides code { color:#d3d6e5; overflow-wrap:anywhere; }
+.pet-faq { margin-top:24px; }
+.pet-faq details { border-top:1px solid rgb(255 255 255 / .08); padding:16px 0; }
+.pet-faq details:last-child { padding-bottom:0; }
+.pet-faq summary { color:#d2d5e3; cursor:pointer; font-size:14px; }
+.pet-faq details[open] summary { color:var(--cyan); }
+.pet-integrity { display:grid; grid-template-columns:1fr 1.1fr; gap:32px; margin-top:24px; align-items:center; }
+.pet-integrity p:not(.replica-eyebrow) { color:#989bad; font-size:12px; margin:8px 0; }
+.pet-filename { overflow-wrap:anywhere; }
+.pet-hash code { display:block; overflow-wrap:anywhere; color:#c0c4d5; font-size:12px; line-height:1.8; }
+.pet-hash button { margin-top:12px; padding:7px 13px; color:var(--cyan); border:1px solid var(--border); background:rgb(0 245 255 / .06); border-radius:2px; cursor:pointer; font:inherit; font-size:12px; }
+.pet-hash [role=status] { display:block; min-height:20px; color:#9bb9bf; font-size:12px; margin-top:6px; }
+.pet-bottom-note { text-align:center; font-size:12px; color:var(--muted); margin:30px 0 0; }
+.pet-download-unavailable { border:1px solid var(--border); padding:18px; color:#c0c4d5; }
+.desktop-pet-page a:focus-visible,.desktop-pet-page button:focus-visible,.desktop-pet-page summary:focus-visible { outline:2px solid var(--yellow); outline-offset:5px; }
+@media(max-width:1000px) { .pet-hero { gap:24px; padding-inline:0; } .pet-features { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:640px) { .pet-hero { grid-template-columns:1fr; gap:20px; padding-bottom:28px; } .pet-hero-copy h2 { font-size:44px; } .pet-lead { font-size:15px; } .pet-art { grid-row:2; } .pet-art img { max-width:280px; } .pet-art-orbit { width:260px; } .pet-download-button { display:flex; padding:17px 14px; font-size:17px; gap:12px; } .pet-features { gap:10px; margin-bottom:24px; } .pet-features article { padding:20px 15px; } .pet-guides,.pet-integrity { grid-template-columns:1fr; gap:16px; } .pet-guides article,.pet-faq,.pet-integrity { padding:22px 18px; } .pet-build-note { padding:15px 18px; } }
+@media(prefers-reduced-motion:reduce) { .pet-download-button { transition:none; } }

@@ -41,10 +41,17 @@ namespace YoMi_Frontend
             services.AddDbContext<DBContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<PortalService>();
+            services.AddScoped(provider => new DiscordOrderNotificationService(provider.GetRequiredService<DBContext>(),
+                provider.GetRequiredService<IConfiguration>(), provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<DiscordOrderNotificationService>>()));
+            services.AddHostedService<DiscordOrderNotificationHostedService>();
             services.AddScoped<YoMi_Admin.Library.Models.Orders.CustomerOrderService>();
             services.AddScoped<GoogleMemberLogin>();
-            // Legacy password login/registration retained in AccountController but disabled.
-            // services.AddScoped<IPasswordHasher<FrontendMember>, PasswordHasher<FrontendMember>>();
+            services.AddScoped<EmailMemberLogin>();
+            services.AddSingleton<AccountAttemptLimiter>();
+            services.AddSingleton<DesktopGoogleVerifier>();
+            services.AddSingleton<DesktopGoogleExchange>();
+            services.AddScoped<DesktopPetStore>();
+            services.AddSingleton(provider => new DesktopPetReleaseService(provider.GetRequiredService<IWebHostEnvironment>().ContentRootPath));
 
             var authentication = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
@@ -64,12 +71,7 @@ namespace YoMi_Frontend
                         var member = int.TryParse(idValue, out var id)
                             ? await database.FrontendMember.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id)
                             : null;
-                        var claimsMatch = member != null && member.HasLoggedInNewSite &&
-                            !string.IsNullOrWhiteSpace(member.PasswordHash) &&
-                            string.Equals(context.Principal.FindFirstValue("google_sub"), member.PasswordHash, StringComparison.Ordinal) &&
-                            context.Principal.IsInRole(member.Role) &&
-                            context.Principal.FindFirstValue(ClaimTypes.Name) == member.Name &&
-                            context.Principal.FindFirstValue(ClaimTypes.Email) == member.Email;
+                        var claimsMatch = AuthCookie.Matches(context.Principal, member);
                         if (!claimsMatch)
                         {
                             context.RejectPrincipal();
@@ -178,7 +180,7 @@ namespace YoMi_Frontend
                 });
             }
             app.UseStaticFiles();
-            app.UseStatusCodePagesWithReExecute("/status/{0}");
+            app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api/desktop"), branch => branch.UseStatusCodePagesWithReExecute("/status/{0}"));
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

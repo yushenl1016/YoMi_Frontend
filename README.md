@@ -31,3 +31,17 @@ dotnet ef database update --project .\YoMi_Admin.Library\YoMi_Admin.Library.cspr
 
 正式環境請以 Secret／環境變數覆寫 `ConnectionStrings__DefaultConnection`，不要把
 正式密碼提交到版本控制。
+
+## Discord 訂單通知
+
+由前台伺服器背景程序每 15 秒處理共用資料庫中的下單與收款通知，無須同時運行後台發送服務。私密設定放在 `YoMi_Frontend/.secrets/discord-orders.json`，設定 `DiscordOrders:Enabled` 為 `true` 啟用；檔案已排除 Git 與發布輸出，部署時需另行放置。Webhook 不會傳給瀏覽器。
+
+前後台須連到同一個已套用通知資料表遷移的資料庫。本機修改後請停止 VS 偵錯、重新建置並啟動前台，再下單測試；一般會在 15 秒內發送。完整設定、資料庫更新順序與重試限制見 [後台 README 的 Discord 訂單通知](../YoMi_Admin/README.md#discord-訂單通知)。
+
+## YoMi_Desktop_Pet 資料庫
+
+桌寵沿用本專案的 SQL Server 與 FrontendMember，既有 YoMiDocuments／YoMiSessions 改以 FrontendMemberId 關聯；YoMiUsers 已移除。Google 登入、HTTPS API 與每 15 秒自動同步已接通。設定、資料保留遷移及本機後端啟動方式見 [桌寵資料庫與 API 說明](tools/DesktopPetDatabase.md)。
+
+## 桌寵下載
+
+前台導覽的「桌寵下載」連至 `/desktop-pet`，提供乾淨 ZIP、安裝／保留 Data 更新說明及檔案校驗碼。沿用既有 MVC 版型，不需要另建網站。打包、localhost 測試與部署發行目錄方式見 [桌寵下載維護說明](tools/DesktopPetDownload.md)。

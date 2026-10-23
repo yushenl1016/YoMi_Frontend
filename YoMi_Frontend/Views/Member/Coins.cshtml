@@ -7,7 +7,7 @@
 <header class="replica-heading"><div class="container">
     <p class="replica-eyebrow">MY YOMI COINS</p><h1>我的悠咪幣</h1>
     <p>邀請朋友使用你的推薦碼，累積悠咪幣。1 元推薦獎勵＝1 悠咪幣，每筆不足 1 幣的部分無條件進位，再加總。</p>
-    <a asp-action="Index">← 返回會員頁面</a>
+    <a asp-action="Index">← 返回我的消費</a>
 </div></header>
 <section class="replica-content container">
     <div class="record-stats">
@@ -39,9 +39,12 @@
             </div>
         }
     </section>
-    <nav class="coin-pagination" aria-label="悠咪幣分頁">
-        @if (Model.Page > 1) { <a asp-action="Coins" asp-route-page="@(Model.Page - 1)">← 上一頁</a> }
-        <span>第 @Model.Page / @Model.TotalPages 頁</span>
-        @if (Model.Page < Model.TotalPages) { <a asp-action="Coins" asp-route-page="@(Model.Page + 1)">下一頁 →</a> }
-    </nav>
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="coin-pagination" aria-label="悠咪幣分頁">
+            @if (Model.Page > 1) { <a asp-action="Coins" asp-route-page="@(Model.Page - 1)">← 上一頁</a> }
+            <span>第 @Model.Page / @Model.TotalPages 頁</span>
+            @if (Model.Page < Model.TotalPages) { <a asp-action="Coins" asp-route-page="@(Model.Page + 1)">下一頁 →</a> }
+        </nav>
+    }
 </section>

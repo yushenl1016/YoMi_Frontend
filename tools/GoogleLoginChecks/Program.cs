@@ -20,6 +20,7 @@ using YoMi_Frontend.ViewModels;
 using YoMi_Frontend.Services;
 
 // Isolated in-memory database only. Never reads appsettings or connects to the shared SQL Server.
+if (args.Contains("--preview")) { await EmailHttpChecks.RunAsync(preview: true); return; }
 var cutoff = new DateTime(2026, 9, 18, 13, 44, 4, DateTimeKind.Utc);
 var passed = 0;
 void Check(bool condition, string message)
@@ -30,7 +31,7 @@ ClaimsPrincipal Google(string email = "legacy@example.com", string sub = "google
     new(new ClaimsIdentity(new[] { new Claim("sub", sub), new Claim("email", email), new Claim("email_verified", verified) }, "Google"));
 
 async Task Run(string label, DateTime created, bool loggedIn, string storedSub, bool allow,
-    string config = "2026-09-18 21:44:04", string incomingSub = "google-sub", string verified = "true")
+    string config = "2026-09-18 21:44:04", string incomingSub = "google-sub", string verified = "true", bool allowLegacyEmailBinding = true)
 {
     await using var connection = new SqliteConnection("Data Source=:memory:");
     await connection.OpenAsync();
@@ -53,7 +54,7 @@ async Task Run(string label, DateTime created, bool loggedIn, string storedSub, 
     var succeeded = false;
     try
     {
-        var result = await new GoogleMemberLogin(db).SignInAsync(Google(" LEGACY@EXAMPLE.COM ", incomingSub, verified));
+        var result = await new GoogleMemberLogin(db).SignInAsync(Google(" LEGACY@EXAMPLE.COM ", incomingSub, verified), allowLegacyEmailBinding: allowLegacyEmailBinding);
         Check(result.Id == 77, "Existing member ID changed.");
         succeeded = true;
     }
@@ -72,6 +73,8 @@ async Task Run(string label, DateTime created, bool loggedIn, string storedSub, 
 }
 
 await Run("legacy first login binds by verified email", cutoff.AddSeconds(-1), false, "", true);
+await Run("desktop never binds legacy account by email alone", cutoff.AddSeconds(-1), false, "", false, allowLegacyEmailBinding: false);
+await Run("desktop accepts exact Google subject on existing member", cutoff.AddSeconds(-1), true, "google-sub", true, allowLegacyEmailBinding: false);
 await Run("cutoff equality is included", cutoff, false, "old-open-id", true);
 await Run("after cutoff rejects mismatched sub even on first login", cutoff.AddSeconds(1), false, "old-sub", false);
 await Run("after cutoff accepts email and sub then marks migrated", cutoff.AddSeconds(1), false, "google-sub", true);
@@ -180,7 +183,9 @@ await using (var connection = new SqliteConnection("Data Source=:memory:"))
     Console.WriteLine("PASS referral query/form/OAuth/callback hand-off, callback tamper resistance, local redirect and retry");
     passed += 6;
 }
-Console.WriteLine($"{passed} checks passed; no shared database was accessed.");
+await EmailLoginChecks.Run();
+await EmailHttpChecks.RunAsync();
+Console.WriteLine($"{passed} Google checks and email login checks passed; no shared database was accessed.");
 
 sealed class CheckAuthentication : IAuthenticationService
 {

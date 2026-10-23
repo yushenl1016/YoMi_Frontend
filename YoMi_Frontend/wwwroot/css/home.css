@@ -194,7 +194,7 @@ html:has(.home-page) { scroll-behavior: auto; }
     .home-page .mobile-nav nav { top: 60px; padding: 12px 16px; background: oklch(0.06 0.018 265 / .98); }
     .home-page .mobile-nav nav > a { padding: 10px 16px; font: 600 11px/16.5px var(--display-font); letter-spacing: .18em; }
     .home-page .mobile-nav .battle-menu > summary { padding: 10px 16px; font: 600 11px/16.5px var(--display-font); letter-spacing: .18em; }
-    .home-page .mobile-nav nav > a[href="/"] { border-left-color: var(--yellow); color: var(--yellow); background: oklch(0.92 0.22 95 / .05); }
+    .home-page .mobile-nav nav > a.is-active { border-left-color: var(--yellow); color: var(--yellow); background: oklch(0.92 0.22 95 / .05); }
     .home-page .mobile-nav .home-volume > summary { display: none; }
     .home-page .mobile-nav .home-volume-panel { position: static; display: block; width: 100%; border: 0; background: transparent; box-shadow: none; padding: 10px 16px; }
     .home-page .home-mobile-account { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid oklch(0.85 0.20 195 / .1); }

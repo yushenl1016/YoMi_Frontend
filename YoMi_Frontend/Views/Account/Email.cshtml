@@ -1,0 +1,143 @@
+@model EmailEntryViewModel
+@inject YoMi_Frontend.Services.PortalService Portal
+@{
+    var step = ViewData["AuthStep"] as string ?? "email";
+    var title = step switch { "password" => "歡迎回來", "register" => "建立新帳號", "google-link" => "連結 Google 登入", "transfer-confirm" => "這是你的帳號嗎？", "transfer-password" => "設定登入密碼", "transfer-support" => ViewData["TransferName"] == null ? "查無可轉移帳號" : "聯絡客服協助轉移", "transfer-submitted" => "截圖已上傳", "transfer" => "你有舊站帳號嗎？", _ => "登入或註冊" };
+    ViewData["Title"] = title;
+    var back = Url.Action("Index", "Account", new { returnUrl = Model.ReturnUrl, @ref = Model.ReferralCode, email = Model.Email });
+}
+@section Styles { <link rel="stylesheet" href="~/css/email-auth.css" asp-append-version="true" /> }
+<section class="member-auth @(step == "transfer" ? "member-auth-transfer" : "")" aria-labelledby="auth-title">
+    <div class="member-auth-card">
+        <img class="member-auth-logo" src="@(ViewData["LogoUrl"])" alt="悠咪電競" />
+        <p class="member-auth-kicker">YOUR YUMI ACCOUNT</p>
+        <h1 id="auth-title">@title</h1>
+        @if (step == "password" && ViewData["LoginName"] is string loginName)
+        {
+            <p class="member-auth-name" data-login-name>@loginName</p>
+        }
+        @if (step != "email") { <p class="member-auth-email">@Model.Email</p> }
+        <div asp-validation-summary="All" class="validation-summary" role="alert"></div>
+        @if (step == "password" || step == "google-link")
+        {
+            @if (step == "google-link") { <p class="member-auth-intro">輸入此帳號的原密碼，之後即可使用 Google 或密碼登入同一個帳號。</p> }
+            <form action="@(step == "google-link" ? "/account/link-google" : "/account/login")" method="post" class="member-auth-form">
+                @Html.AntiForgeryToken()
+                <input asp-for="Email" type="hidden" /><input asp-for="ReturnUrl" type="hidden" /><input asp-for="ReferralCode" type="hidden" />
+                <label for="login-password">密碼</label>
+                <input id="login-password" name="Password" type="password" required maxlength="128" autocomplete="current-password" placeholder="輸入你的密碼" autofocus />
+                <button class="member-auth-primary" type="submit">@(step == "google-link" ? "連結並登入" : "登入") <span aria-hidden="true">→</span></button>
+            </form>
+        }
+        else if (step == "transfer")
+        {
+            <p class="member-auth-intro">先登入舊站，取得轉移碼，再回到這裡貼上。</p>
+            <div class="member-auth-transfer-grid">
+                <aside class="transfer-guide" aria-label="舊站轉移碼教學">
+                    <h2>如何取得轉移碼？</h2>
+                    <ol>
+                        <li><a href="https://youmi-esports-mm5gly2p.manus.space/" target="_blank" rel="noopener noreferrer">開啟舊站台並登入 ↗</a></li>
+                        <li>點選右上角的會員名稱（圖中 1）。</li>
+                        <li>複製跳出視窗中的轉移碼（圖中 2），回到這裡貼上。</li>
+                    </ol>
+                    <a href="~/images/auth/legacy-transfer-guide.png" target="_blank" rel="noopener" aria-label="另開分頁查看完整轉移碼教學圖片">
+                        <img src="~/images/auth/legacy-transfer-guide.png" width="976" height="773" alt="舊站轉移碼教學：1 點右上角會員名稱；2 複製轉移碼視窗內的 USER ID。" />
+                    </a>
+                    <p class="member-auth-note">圖片中的 0000000 為範例，請複製你自己的轉移碼。點圖片可放大。</p>
+                </aside>
+                <div>
+                    <form action="/account/transfer" method="post" class="member-auth-form">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="Email" type="hidden" /><input asp-for="ReturnUrl" type="hidden" /><input asp-for="ReferralCode" type="hidden" />
+                        <label for="transfer-id">舊站轉移碼</label>
+                        <input id="transfer-id" name="LegacyId" inputmode="numeric" pattern="[0-9]+" maxlength="10" required placeholder="貼上舊站顯示的轉移碼" aria-describedby="transfer-note" />
+                        <p id="transfer-note" class="member-auth-note">下一步會顯示帳號名稱，確認後設定密碼，即可沿用原帳號及會員紀錄。</p>
+                        <button class="member-auth-primary" type="submit">繼續轉移 <span aria-hidden="true">→</span></button>
+                        <div class="member-auth-divider"><span>第一次來到悠咪？</span></div>
+                        <button class="member-auth-secondary" type="submit" formaction="/account/register/start" formnovalidate>沒有轉移碼，建立新帳號</button>
+                    </form>
+                    <p class="member-auth-note">原本使用 Google 的會員，也可以返回使用 Google 登入，再設定密碼。</p>
+                </div>
+            </div>
+        }
+        else if (step == "register")
+        {
+            <p class="member-auth-intro">設定名稱和密碼，開始使用你的悠咪帳號。</p>
+            <form action="/account/register" method="post" class="member-auth-form">
+                @Html.AntiForgeryToken()
+                <input asp-for="Email" type="hidden" /><input asp-for="ReturnUrl" type="hidden" /><input asp-for="ReferralCode" type="hidden" />
+                <label for="register-name">會員名稱</label><input id="register-name" name="Name" value="@ViewData["RegistrationName"]" required maxlength="64" autocomplete="nickname" placeholder="你希望大家怎麼稱呼你" autofocus />
+                <label for="register-password">密碼</label><input id="register-password" name="Password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="8 至 128 個字元" />
+                <label for="register-confirm">確認密碼</label><input id="register-confirm" name="ConfirmPassword" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="再次輸入密碼" />
+                <button class="member-auth-primary" type="submit">建立帳號 <span aria-hidden="true">→</span></button>
+            </form>
+            <p class="member-auth-note">新帳號不會帶入舊站紀錄；若要保留紀錄，請返回轉移流程。</p>
+            <form action="/account/check-email" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="Email" type="hidden" /><input asp-for="ReturnUrl" type="hidden" /><input asp-for="ReferralCode" type="hidden" />
+                <button class="member-auth-back" type="submit">返回舊站轉移</button>
+            </form>
+        }
+        else if (step == "transfer-confirm")
+        {
+            <p class="member-auth-intro">此轉移碼對應的舊站帳號如下，請確認是否為你的帳號。</p>
+            <dl class="member-auth-details"><dt>舊站帳號名稱</dt><dd class="transfer-member-name" data-transfer-name>@ViewData["TransferName"]</dd><dt>VIP 等級</dt><dd data-transfer-vip>@ViewData["TransferVip"]</dd><dt>舊站轉移碼</dt><dd>@ViewData["LegacyId"]</dd></dl>
+            <form action="/account/transfer/confirm" method="post" class="member-auth-form">
+                @Html.AntiForgeryToken()
+                <input name="TransferToken" type="hidden" value="@ViewData["TransferToken"]" />
+                <button class="member-auth-primary" type="submit">是，這是我的帳號 <span aria-hidden="true">→</span></button>
+                <button class="member-auth-secondary" type="submit" formaction="/account/transfer/support/start">不是我的帳號，聯絡客服</button>
+            </form>
+        }
+        else if (step == "transfer-password")
+        {
+            <p class="member-auth-intro">為「@ViewData["TransferName"]」設定密碼。完成後將使用上方 Email 登入，原有會員紀錄會保留。</p>
+            <form action="/account/transfer/complete" method="post" class="member-auth-form">
+                @Html.AntiForgeryToken()
+                <input name="TransferToken" type="hidden" value="@ViewData["TransferToken"]" />
+                <label for="transfer-password">密碼</label><input id="transfer-password" name="Password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="8 至 128 個字元" autofocus />
+                <label for="transfer-confirm-password">確認密碼</label><input id="transfer-confirm-password" name="ConfirmPassword" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="再次輸入密碼" />
+                <button class="member-auth-primary" type="submit">完成轉移並登入 <span aria-hidden="true">→</span></button>
+            </form>
+        }
+        else if (step == "transfer-support" || step == "transfer-submitted")
+        {
+            var settings = await Portal.GetSettingsAsync();
+            settings.TryGetValue("contact_discord", out var supportUrl);
+            if (!Uri.TryCreate(supportUrl, UriKind.Absolute, out var support) || (support.Scheme != "https" && support.Scheme != "http")) { supportUrl = "https://discord.gg/yummi-esports-club"; }
+            @if (step == "transfer-support")
+            {
+                <p class="member-auth-intro">@(ViewData["TransferName"] == null ? "請確認轉移碼是否正確；若仍無法轉移，請聯絡客服協助。" : "請聯絡客服協助確認你的舊站帳號。") 你也可以先上傳舊站登入截圖，方便客服核對。</p>
+            }
+            else
+            {
+                <p class="member-auth-intro" role="status">截圖已儲存，請聯絡客服並提供下方申請編號，以便查閱與協助轉移。</p>
+                <dl class="member-auth-details"><dt>申請編號</dt><dd>@ViewData["SupportRequestId"]</dd></dl>
+            }
+            <dl class="member-auth-details"><dt>舊站轉移碼</dt><dd>@ViewData["LegacyId"]</dd><dt>新 Email</dt><dd>@Model.Email</dd></dl>
+            @if (step == "transfer-support")
+            {
+                <form action="/account/transfer/support" method="post" enctype="multipart/form-data" class="member-auth-form">
+                    @Html.AntiForgeryToken()
+                    <input name="TransferToken" type="hidden" value="@ViewData["TransferToken"]" />
+                    <label for="transfer-screenshot">舊站登入截圖</label>
+                    <input id="transfer-screenshot" name="screenshot" type="file" accept="image/jpeg,image/png,image/webp" required aria-describedby="screenshot-note" />
+                    <p id="screenshot-note" class="member-auth-note">請提供登入舊站後，含會員名稱與轉移碼的畫面。支援 JPG、PNG、WebP，最大 5 MB，僅供客服核對。</p>
+                    <button class="member-auth-secondary" type="submit">上傳截圖</button>
+                </form>
+            }
+            <a class="member-auth-primary" href="@supportUrl" target="_blank" rel="noopener noreferrer">聯絡客服 <span aria-hidden="true">↗</span></a>
+            <p class="member-auth-note">此流程不會變更帳號，轉移將由客服協助確認。</p>
+        }
+        else
+        {
+            <form action="/account/check-email" method="post" class="member-auth-form">
+                @Html.AntiForgeryToken()
+                <input asp-for="ReturnUrl" type="hidden" /><input asp-for="ReferralCode" type="hidden" />
+                <label for="auth-email">Email</label><input id="auth-email" name="Email" value="@Model.Email" type="email" maxlength="320" required autocomplete="email" autofocus />
+                <button class="member-auth-primary" type="submit">繼續 <span aria-hidden="true">→</span></button>
+            </form>
+        }
+        <a class="member-auth-back" href="@back">← 返回登入，使用其他方式</a>
+    </div>
+</section>

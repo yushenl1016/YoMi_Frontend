@@ -19,7 +19,7 @@ namespace YoMi_Frontend.Services
         public GoogleMemberLogin(DBContext db) => _db = db;
 
         // Only called with the principal produced by the Google OIDC token validator.
-        public async Task<FrontendMember> SignInAsync(ClaimsPrincipal principal, string referralCode = null)
+        public async Task<FrontendMember> SignInAsync(ClaimsPrincipal principal, string referralCode = null, bool allowLegacyEmailBinding = true, string password = null)
         {
             var sub = principal?.FindFirstValue("sub");
             var email = principal?.FindFirstValue("email")?.Trim().ToLowerInvariant();
@@ -33,7 +33,7 @@ namespace YoMi_Frontend.Services
 
             // Atomic lookup/binding prevents simultaneous first logins from overwriting a binding.
             await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-            var member = await _db.FrontendMember.SingleOrDefaultAsync(x => x.Email == email);
+            var member = await _db.FrontendMember.SingleOrDefaultAsync(x => x.Email.ToLower() == email);
             var isNewMember = member == null;
             if (await _db.FrontendMember.AnyAsync(x => x.PasswordHash == sub && x.Email != email))
                 throw new UnauthorizedAccessException("此 Google 帳號已對應其他會員 Email，請聯絡管理員。");
@@ -60,9 +60,16 @@ namespace YoMi_Frontend.Services
                 // SysConfig is edited in Taiwan time; member timestamps are stored in UTC.
                 var validCutoff = DateTime.TryParseExact(cutoffText, "yyyy-MM-dd HH:mm:ss",
                     CultureInfo.InvariantCulture, DateTimeStyles.None, out var taiwanCutoff);
-                var canBindLegacy = validCutoff && !member.HasLoggedInNewSite &&
+                var canBindLegacy = allowLegacyEmailBinding && validCutoff && !member.HasLoggedInNewSite &&
                     member.CreatedAt <= new DateTimeOffset(taiwanCutoff, TimeSpan.FromHours(8)).UtcDateTime;
-                if (canBindLegacy)
+                if (string.IsNullOrEmpty(member.PasswordHash) && !string.IsNullOrEmpty(member.EmailPasswordHash))
+                {
+                    // Prove control of both credentials before linking an unverified password registration.
+                    if (!allowLegacyEmailBinding || FrontendMemberPassword.Verify(member, password) == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
+                        throw new GooglePasswordLinkRequiredException();
+                    member.PasswordHash = sub;
+                }
+                else if (canBindLegacy && string.IsNullOrEmpty(member.EmailPasswordHash))
                     member.PasswordHash = sub;
                 else if (!string.Equals(member.PasswordHash, sub, StringComparison.Ordinal))
                     throw new UnauthorizedAccessException("Google 帳號與既有會員的 Email／sub 不符，請聯絡管理員。");
@@ -78,5 +85,10 @@ namespace YoMi_Frontend.Services
             await transaction.CommitAsync();
             return member;
         }
+    }
+
+    public sealed class GooglePasswordLinkRequiredException : UnauthorizedAccessException
+    {
+        public GooglePasswordLinkRequiredException() : base("此 Email 已設定密碼，請輸入原密碼以連結 Google 登入。") { }
     }
 }

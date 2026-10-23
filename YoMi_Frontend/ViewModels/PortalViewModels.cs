@@ -67,7 +67,7 @@ namespace YoMi_Frontend.ViewModels
         public string RewardStatus { get; set; }
     }
 
-    public sealed class AccountViewModel
+    public class EmailEntryViewModel
     {
         public string ReferralCode { get; set; }
         [Required(ErrorMessage = "請輸入郵箱")]
@@ -75,16 +75,21 @@ namespace YoMi_Frontend.ViewModels
         [StringLength(320)]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "請輸入密碼")]
+        [StringLength(2048)]
+        public string ReturnUrl { get; set; }
+    }
+
+    public sealed class AccountViewModel : EmailEntryViewModel
+    {
+        [Required(ErrorMessage = "請輸入密碼"), StringLength(128)]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
-
-        [StringLength(64)]
-        public string ReturnUrl { get; set; }
     }
 
     public sealed class RegisterViewModel
     {
+        public string ReferralCode { get; set; }
+        [StringLength(2048)] public string ReturnUrl { get; set; }
         [Required(ErrorMessage = "請輸入用戶名稱")]
         [StringLength(64, ErrorMessage = "用戶名稱不可超過 64 個字")]
         public string Name { get; set; } = string.Empty;
@@ -103,6 +108,25 @@ namespace YoMi_Frontend.ViewModels
         [Compare(nameof(Password), ErrorMessage = "兩次輸入的密碼不相同")]
         [DataType(DataType.Password)]
         public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public sealed class TransferViewModel : EmailEntryViewModel
+    {
+        [Range(1, int.MaxValue, ErrorMessage = "請輸入舊站的轉移碼（會員 ID）。")]
+        public int LegacyId { get; set; }
+    }
+
+    public class PasswordSetupViewModel
+    {
+        [Required(ErrorMessage = "請輸入密碼"), StringLength(128, MinimumLength = 8, ErrorMessage = "密碼須為 8 至 128 個字元。")]
+        [DataType(DataType.Password)] public string Password { get; set; }
+        [Required(ErrorMessage = "請再次輸入密碼"), Compare(nameof(Password), ErrorMessage = "兩次輸入的密碼不相同。")]
+        [DataType(DataType.Password)] public string ConfirmPassword { get; set; }
+    }
+
+    public sealed class TransferPasswordViewModel : PasswordSetupViewModel
+    {
+        [Required, StringLength(8192)] public string TransferToken { get; set; }
     }
 
     public sealed class AdminMemberViewModel

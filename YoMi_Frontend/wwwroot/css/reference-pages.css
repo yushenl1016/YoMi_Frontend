@@ -150,8 +150,6 @@
     .reference-page .replica-tier { flex-direction: column; padding: 24px; }
     .reference-page .tier-summary { flex-basis: auto; }
     .reference-page .tier-benefits { border: 0; padding: 0; }
-    .reference-page .mobile-nav nav > a[href="/"] { background: transparent; color: inherit; border-left-color: transparent; }
-    .reference-page.price-page .mobile-nav nav > a[href="/price"], .reference-page.vip-page .mobile-nav nav > a[href="/vip"], .reference-page.records-page .mobile-nav nav > a[href="/my-records"] { color: var(--yellow); background: oklch(.92 .22 95 / .05); border-left-color: var(--yellow); }
 }
 @media (max-width: 639px) {
     .reference-page .discount-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }

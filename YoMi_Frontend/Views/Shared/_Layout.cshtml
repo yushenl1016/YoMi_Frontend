@@ -17,7 +17,19 @@
     var isReferencePage = ViewData["ReferencePage"] is true;
     var isHome = ViewData["HomeReplica"] is true || isReferencePage;
     var homeIcons = Url.Content("~/images/home-icons.svg");
-    string Active(string route) => string.Equals(path, route, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty;
+    bool Is(string route) => string.Equals(path, route, StringComparison.OrdinalIgnoreCase);
+    bool Under(string route) => Is(route) || path.StartsWith(route + "/", StringComparison.OrdinalIgnoreCase);
+    // Review/create re-render the order form, so they belong to "立即下單" rather than "我的訂單".
+    var inOrderForm = Is("/orders/new") || Is("/orders/review") || Is("/orders/create");
+    bool IsActive(string route) => route switch
+    {
+        "/orders/new" => inOrderForm,
+        "/orders" => Under("/orders") && !inOrderForm,
+        "/my-records" => Under("/my-records"),
+        _ => Is(route)
+    };
+    string Active(string route) => IsActive(route) ? "is-active" : null;
+    string Current(string route) => IsActive(route) ? "page" : null;
 }
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -36,12 +48,13 @@
     }
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="@(isReferencePage ? "home-page reference-page " + ViewData["PageClass"] : isHome ? "home-page" : null)">
+<body class="@(chrome.Background != null ? "has-site-background " : "")@(isReferencePage ? "home-page reference-page " + ViewData["PageClass"] : isHome ? "home-page" : null)">
     @if (chrome.Background != null)
     {
         var backgroundUrl = chrome.Background.FileUrl.StartsWith("/uploads/backgrounds/", StringComparison.Ordinal)
             ? Url.Content("~" + chrome.Background.FileUrl) : chrome.Background.FileUrl;
-        <div class="site-background" aria-hidden="true">
+        var opacity = YoMi_Admin.Library.Models.Frontend.BackgroundAppearance.ReadOpacity(chrome.Get(YoMi_Admin.Library.Models.Frontend.BackgroundAppearance.Key));
+        <div class="site-background" aria-hidden="true" style="--background-overlay-opacity:@((opacity / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture))">
             @if (chrome.Background.MimeType.StartsWith("embed/"))
             {
                 <iframe src="@backgroundUrl" title="網站動態背景" tabindex="-1" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -67,11 +80,13 @@
             </a>
 
             <nav class="desktop-nav" aria-label="主要導覽">
-                <a class="@Active("/")" href="/">首頁</a>
-                <a class="@Active("/price")" href="/price">價目表</a>
-                <a class="@Active("/orders/new")" href="/orders/new">立即下單</a>
-                <a class="@Active("/vip")" href="/vip">VIP 等級</a>
-                <a class="@Active("/my-records")" href="/my-records">我的消費</a>
+                <a class="@Active("/")" aria-current="@Current("/")" href="/">首頁</a>
+                <a class="@Active("/price")" aria-current="@Current("/price")" href="/price">價目表</a>
+                <a class="@Active("/orders/new")" aria-current="@Current("/orders/new")" href="/orders/new">立即下單</a>
+                <a class="@Active("/orders")" aria-current="@Current("/orders")" href="/orders">我的訂單</a>
+                <a class="@Active("/vip")" aria-current="@Current("/vip")" href="/vip">VIP 等級</a>
+                <a class="@Active("/my-records")" aria-current="@Current("/my-records")" href="/my-records">我的消費</a>
+                <a class="@Active("/desktop-pet")" aria-current="@Current("/desktop-pet")" href="@Url.Content("~/desktop-pet")">桌寵下載</a>
                 <partial name="_BattleMenu" model="chrome" />
             </nav>
 
@@ -102,12 +117,13 @@
             <details class="mobile-nav">
                 <summary aria-label="開啟導覽選單">@if (isHome) { <svg class="home-icon menu-open-icon" aria-hidden="true"><use href="@(homeIcons)#menu" /></svg><svg class="home-icon menu-close-icon" aria-hidden="true"><use href="@(homeIcons)#close" /></svg> } else { <span>選單</span> }</summary>
                 <nav aria-label="行動版導覽">
-                    <a href="/">首頁</a>
-                    <a href="/price">價目表</a>
-                    <a href="/orders/new">立即下單</a>
-                    <a href="/orders">我的訂單</a>
-                    <a href="/vip">VIP 等級</a>
-                    <a href="/my-records">我的消費</a>
+                    <a class="@Active("/")" aria-current="@Current("/")" href="/">首頁</a>
+                    <a class="@Active("/price")" aria-current="@Current("/price")" href="/price">價目表</a>
+                    <a class="@Active("/orders/new")" aria-current="@Current("/orders/new")" href="/orders/new">立即下單</a>
+                    <a class="@Active("/orders")" aria-current="@Current("/orders")" href="/orders">我的訂單</a>
+                    <a class="@Active("/vip")" aria-current="@Current("/vip")" href="/vip">VIP 等級</a>
+                    <a class="@Active("/my-records")" aria-current="@Current("/my-records")" href="/my-records">我的消費</a>
+                    <a class="@Active("/desktop-pet")" aria-current="@Current("/desktop-pet")" href="@Url.Content("~/desktop-pet")">桌寵下載</a>
                     <partial name="_BattleMenu" model="chrome" />
                     @if (isHome)
                     {

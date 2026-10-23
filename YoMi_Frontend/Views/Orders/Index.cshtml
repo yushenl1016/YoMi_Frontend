@@ -13,5 +13,8 @@
         <a class="order-panel order-list-item" asp-action="Detail" asp-route-id="@order.Id"><div><span class="order-badge">@OrderRules.CustomerStatusText(order.Status)</span><h2>@order.ServiceName × @order.Quantity @order.Unit</h2><small class="order-muted">@OrderRules.Number(order) · @order.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small></div><strong>@(order.PayableAmount.HasValue ? $"NT$ {order.PayableAmount:N0}" : "價格未定") <span aria-hidden="true">→</span></strong></a>
     }
     </div>
-    <nav class="order-actions" aria-label="訂單分頁">@if (Model.Page > 1) { <a asp-action="Index" asp-route-history="@Model.History" asp-route-page="@(Model.Page - 1)">← 上一頁</a> }<span>第 @Model.Page 頁</span>@if (Model.HasNext) { <a asp-action="Index" asp-route-history="@Model.History" asp-route-page="@(Model.Page + 1)">下一頁 →</a> }</nav>
+    @if (Model.Page > 1 || Model.HasNext)
+    {
+        <nav class="order-actions" aria-label="訂單分頁">@if (Model.Page > 1) { <a asp-action="Index" asp-route-history="@Model.History" asp-route-page="@(Model.Page - 1)">← 上一頁</a> }<span>第 @Model.Page 頁</span>@if (Model.HasNext) { <a asp-action="Index" asp-route-history="@Model.History" asp-route-page="@(Model.Page + 1)">下一頁 →</a> }</nav>
+    }
 </section>

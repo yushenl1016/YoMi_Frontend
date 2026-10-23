@@ -1,0 +1,81 @@
+@model DesktopPetReleaseViewModel
+@{
+    ViewData["Title"] = "桌寵下載";
+    ViewData["ReferencePage"] = true;
+    ViewData["PageClass"] = "desktop-pet-page";
+}
+@section Styles { <link rel="stylesheet" href="~/css/desktop-pet.css" asp-append-version="true" /> }
+<header class="replica-heading"><div class="container heading-content">
+    <div class="heading-logo"><img src="@(ViewData["LogoUrl"])" alt="悠咪電競" /><span>DESKTOP PET</span></div>
+    <div><p class="replica-eyebrow">YOUR FOCUS COMPANION</p><h1>桌寵下載</h1><p>把悠咪帶到桌面，讓每一次專注都有陪伴。</p></div>
+</div></header>
+<div class="replica-content container pet-download-content">
+    <section class="pet-hero" aria-labelledby="pet-title">
+        <div class="pet-hero-copy">
+            <p class="replica-eyebrow">YOMI DESKTOP PET</p>
+            <h2 id="pet-title">你專心，<br /><span>悠咪陪你。</span></h2>
+            <p class="pet-lead">一隻會跟著你打字的桌面小夥伴。專注計時、個性換裝、喜歡的音樂，還有休息時的小遊戲。</p>
+            <div class="pet-platform"><span class="replica-tag tag-recommended">免費下載</span><span>Windows 10 / 11 · 64 位元</span></div>
+            @if (Model != null)
+            {
+                <a class="pet-download-button" href="@Url.Action("Download", "DesktopDownload")" data-pet-download><span aria-hidden="true">↓</span>下載 Windows ZIP<span class="pet-button-size">@Model.SizeLabel</span></a>
+                <p class="pet-release-meta">v@(Model.Version) <span>／</span> @Model.ReleasedAt.ToOffset(TimeSpan.FromHours(8)).ToString("yyyy/MM/dd") <span>／</span> @(Model.Update != null ? "解壓後執行安裝檔" : "解壓後即可執行")</p>
+            }
+            else
+            {
+                <p class="pet-download-unavailable" role="status">下載檔案準備中，請稍後再回來。</p>
+            }
+            <a class="pet-help-link" href="#installation">第一次使用？查看安裝步驟 <span aria-hidden="true">↘</span></a>
+        </div>
+        <div class="pet-art"><div class="pet-art-orbit" aria-hidden="true"></div><img src="~/images/desktop-pet/hero.webp" asp-append-version="true" width="460" height="465" alt="銀白長髮、紫色眼睛的悠咪桌寵" fetchpriority="high" /><span class="pet-art-label">READY TO KEEP YOU COMPANY</span></div>
+    </section>
+
+    @if (Model?.IsLocalBuild == true)
+    {
+        <aside class="pet-build-note"><strong>目前提供本機測試版本</strong><p>桌寵連接這台電腦上的測試服務。訪客模式可直接使用；啟動本機前台服務後，可直接按 Google 登入，不需匯入設定檔。正式對外版本將在測試完成後一起更新。</p></aside>
+    }
+
+    <section class="pet-features" aria-label="桌寵功能">
+        <article class="replica-panel"><span aria-hidden="true">⌨</span><h3>跟著打字的桌寵</h3><p>按鍵亮起、桌面散步，忙碌時也有小小陪伴。只統計按鍵次數，不記錄輸入內容。</p></article>
+        <article class="replica-panel"><span aria-hidden="true">◷</span><h3>專注與換裝</h3><p>使用專注計時累積獎勵，為悠咪挑選服裝、配件與房間裝飾，打造自己的桌面。</p></article>
+        <article class="replica-panel"><span aria-hidden="true">♫</span><h3>音樂與歌單</h3><p>收藏喜歡的歌曲，也能播放電腦裡的音樂。縮到系統列，陪伴依然繼續。</p></article>
+        <article class="replica-panel"><span aria-hidden="true">✦</span><h3>七款休息小遊戲</h3><p>專注之間換個節奏。數獨、2048、記憶配對等遊戲，給自己一段短暫休息。</p></article>
+    </section>
+
+    <section class="pet-guides" id="installation" aria-label="安裝與更新">
+        <article class="replica-panel"><p class="replica-eyebrow">GET STARTED</p><h2>第一次安裝</h2><ol>
+            <li><strong>下載 ZIP</strong><p>按上方按鈕，將壓縮檔存到電腦。</p></li>
+            @if (Model?.Update != null)
+            {
+                <li><strong>解壓縮並安裝</strong><p>對 ZIP 按右鍵選「全部解壓縮」，開啟裡面唯一的 <code>YoMi_Desktop_Pet_Setup.exe</code>，依畫面指示安裝。</p></li>
+                <li><strong>開始使用悠咪</strong><p>安裝完成後開啟桌寵，不用登入也能使用。若原本使用 ZIP 版，請選擇原本放置 <code>YoMi_Desktop_Pet.exe</code> 與 <code>Data</code> 的資料夾安裝，即可保留帳號與進度。</p></li>
+            }
+            else
+            {
+                <li><strong>完整解壓縮</strong><p>對 ZIP 按右鍵選「全部解壓縮」，放到你可寫入的資料夾。請保留整個資料夾，不要只取出執行檔。</p></li>
+                <li><strong>打開悠咪</strong><p>開啟 <code>YoMi_Desktop_Pet.exe</code>。不用登入也能開始使用，首次啟動會建立自己的存檔。</p></li>
+            }
+        </ol></article>
+        <article class="replica-panel"><p class="replica-eyebrow">KEEP YOUR PROGRESS</p><h2>更新並保留進度</h2><ol>
+            <li><strong>在桌寵內檢查更新</strong><p>收到新版通知後，按「立即更新」；也可在桌寵內手動檢查新版。</p></li>
+            <li><strong>等待下載與安裝</strong><p>桌寵會顯示進度，儲存目前資料後完成更新；不需另開網頁或手動執行安裝包。</p></li>
+            <li><strong>自動重新開啟</strong><p>更新完成後桌寵會自動重啟，保留帳號、進度、設定與歌單。請勿刪除 <code>Data</code>。</p></li>
+        </ol></article>
+    </section>
+
+    <section class="pet-faq replica-panel" aria-labelledby="faq-title"><h2 id="faq-title">下載前，你可能想知道</h2>
+        <details><summary>為什麼 Windows 可能顯示「已保護您的電腦」？</summary><p>目前的網站下載版尚未取得受信任的程式碼簽章，SmartScreen 可能因檔案或發行者信譽不足而提示。請核對本頁版本、檔名與 SHA-256，並使用 Windows 安全性掃描下載檔案。若出現具體病毒或威脅名稱，請停止執行並聯絡網站管理者。不要關閉防毒或加入排除項目。</p></details>
+        <details><summary>如何確認下載檔案完整？</summary><p>在 PowerShell 執行 <code>Get-FileHash -Algorithm SHA256 -LiteralPath "下載的 ZIP 完整路徑"</code>，比對下方校驗碼。相同表示檔案與本次發布內容一致，不代表微軟認證或保證安全。桌寵不需要以系統管理員身分執行。</p></details>
+        <details><summary>需要登入才能使用嗎？</summary><p>不需要。訪客可以使用桌寵、專注與遊戲，進度保存在電腦。按「使用 Google 登入」並在瀏覽器選擇自己的帳號，即可使用會員同步；不需下載或匯入 Google 設定檔。</p></details>
+        <details><summary>會記錄我輸入的文字嗎？</summary><p>不會。桌寵只用按鍵事件顯示動畫並累計次數，不保存或上傳輸入文字。</p></details>
+        <details><summary>這份 ZIP 裡面包含別人的帳號嗎？</summary><p>不包含。下載包已排除使用者存檔、登入憑證與私密設定。初始的 120 枚專注幣是程式預設值。</p></details>
+        <details><summary>支援 Mac、手機或自動更新嗎？</summary><p>這份下載適用 Windows 10／11 的 64 位元電腦。0.7.3 起可在桌寵內下載、安裝更新並自動重啟。未具備更新入口的舊版需先移轉至新版，原本的 Data 必須保留。</p></details>
+    </section>
+
+    @if (Model != null)
+    {
+        <section class="pet-integrity replica-panel" aria-label="下載檔案資訊"><div><p class="replica-eyebrow">FILE INTEGRITY</p><h2>檔案資訊與完整性</h2><p class="pet-filename">@Model.FileName</p><p>@Model.SizeLabel · SHA-256</p></div><div class="pet-hash"><code>@Model.Sha256</code><button type="button" data-copy-sha="@Model.Sha256">複製校驗碼</button><span data-copy-status role="status" aria-live="polite"></span></div></section>
+    }
+    <p class="pet-bottom-note">音樂搜尋與串流需要網路。本機音樂僅記錄檔案位置，請另外保留原音檔。</p>
+</div>
+@section Scripts { <script src="~/js/desktop-pet.js" asp-append-version="true"></script> }

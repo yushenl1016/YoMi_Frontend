@@ -17,7 +17,7 @@
             <h2 class="order-category">@category.Key</h2><div class="order-service-grid">
             @foreach (var item in category)
             {
-                <a class="order-panel order-service" asp-action="New" asp-route-itemId="@item.Id"><span class="order-muted">@item.Tab</span><h3>@item.Name</h3><p>@item.Note</p><strong>@(item.OrderUnitPrice.HasValue ? $"NT$ {item.OrderUnitPrice.Value:N0} / {item.OrderUnit}" : "特殊單 · 價格未定")</strong><span class="order-service-next">@(item.OrderUnitPrice.HasValue ? "選擇服務 →" : "填寫需求 →")</span></a>
+                <a class="order-panel order-service" asp-action="New" asp-route-itemId="@item.Id"><span class="order-muted">@item.Tab</span><h3>@item.Name</h3><p>@item.Note</p><strong>@(item.OrderUnitPrice.HasValue ? $"NT$ {item.OrderUnitPrice.Value:N0} / {item.OrderUnit}" : "特殊單 · 價格未定")</strong><span class="order-service-next">@(item.OrderUnitPrice.HasValue ? "選擇服務 →" : "特殊單洽詢 →")</span></a>
             }
             </div>
         }
@@ -54,7 +54,7 @@
             <p>@(fixedPrice ? $"每{unit}價格，下一步確認數量與會員優惠。" : "先送出需求並聯絡客服；報價確認後，再回訂單查看付款資訊。")</p>
             @if (fixedPrice) { <p class="order-muted">@(Model.Item.AllowVipDiscount ? "適用的 VIP、生日與白金首單優惠由系統判定，擇優計算。" : "此服務為固定價，不適用會員折扣。")</p> }
             <p class="order-muted">@(input.IsCustom ? "是否計入 VIP 累積，由客服報價時確認。" : Model.Item.CountsForVip ? "此服務可累積 VIP 消費。" : "此服務不計入 VIP 累積。")</p>
-            <a href="/my-records">查看會員資料／設定生日 →</a>
+            <a href="/my-records">前往「我的消費」設定生日 →</a>
         </aside></div>
     }
 </section>

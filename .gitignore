@@ -4,6 +4,8 @@ obj/
 *.user
 *.suo
 local-secrets/
+.secrets/
+YoMi_Frontend/App_Data/DesktopPetReleases/
 **/client_secret_*.json
 wwwroot/files/
 wwwroot/uploads/backgrounds/*

@@ -14,7 +14,7 @@ Google Console 必須登記實際網站的 HTTPS 網域／連接埠加上 Callba
 
 ## 會員遷移規則
 
-- `FrontendMember.PasswordHash` 現在存 **Google sub**，不是密碼雜湊。原密碼登入／註冊 action 與 Razor 表單已註解保留，不能直接重新啟用。
+- `FrontendMember.PasswordHash` 保存 **Google sub**，真正密碼另存於 `EmailPasswordHash`。Email 分流、密碼登入與舊站轉移見 [EmailLogin.md](EmailLogin.md)。
 - `HasLoggedInNewSite`：舊資料預設 false，Google 會員登入成功後 true；獨立 `/account/google-test` 不改會員。
 - `SysConfig.Id = FrontendGoogleMigrationCutoff`，`Value = 2026-09-18 21:44:04`，固定為台灣時間（UTC+8），格式 `yyyy-MM-dd HH:mm:ss`。程式轉成 UTC 與會員 CreatedAt 比較，每次登入讀取最新值，不快取、不在啟動時改為現在。
 - 已存在 Email：CreatedAt 不晚於截止時間 **且**旗標 false，允許以 Google 驗證過的 Email 首次綁定 sub；其他情況必須 Email、sub 都相符。缺少或格式錯誤的截止設定不允許 Email-only 綁定。
@@ -32,7 +32,7 @@ Google Console 必須登記實際網站的 HTTPS 網域／連接埠加上 Callba
    dotnet tools/GoogleLoginChecks/bin/GoogleLoginChecks/GoogleLoginChecks.dll
    ```
 
-2. 本機啟動後執行 `tools/Test-GoogleLogin.ps1 -BaseUrl https://localhost:44313`，檢查表單、Google 導向、回呼拒絕及舊登入端點停用；不會完成登入或寫入會員。
+2. 本機啟動後執行 `tools/Test-GoogleLogin.ps1 -BaseUrl https://localhost:44313`，檢查表單、Google 導向、回呼拒絕及 Email 端點 CSRF；不會完成登入或寫入會員。
 3. 使用原 Google 帳號在 `/email-auth` 登入一次；檢查相同會員 ID、PasswordHash=sub、HasLoggedInNewSite=1，原角色與消費紀錄不變。再登入一次應嚴格比對 sub。這一步會真的綁定會員，需使用者親自操作。
 
 Schema migration：`20260918134404_AddFrontendGoogleLogin`，位於共用 Admin migrations。`tools/Apply-GoogleLoginMigration.ps1` 預設備份並回滾演練，`-Commit` 才套用，已有 migration 時不重設任何旗標或截止時間。此登入資料轉換不支援自動 Down，以避免重新開放帳號綁定；需復原時先確認備份與後續新增資料。

@@ -216,7 +216,8 @@ a {
     color: var(--muted);
 }
 
-.mobile-nav nav a:hover {
+.mobile-nav nav a:hover,
+.mobile-nav nav a.is-active {
     border-left-color: var(--yellow);
     color: var(--yellow);
 }
@@ -616,12 +617,17 @@ a {
 }
 
 /* Full application pages */
+body.has-site-background { isolation: isolate; }
+body.has-site-background .site-main,
+body.has-site-background .member-auth,
+.has-site-background.home-page .hero-bg-panel { background: transparent; }
 .site-background {
     position: fixed;
     z-index: -2;
     inset: 0;
     overflow: hidden;
     background: var(--bg);
+    pointer-events: none;
 }
 
 .site-background img,
@@ -633,17 +639,19 @@ a {
     object-fit: cover;
 }
 
+.background-shade {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: var(--background-overlay-opacity, .72);
+    pointer-events: none;
+}
+
 .site-background iframe {
     width: 120%;
     height: 120%;
     margin: -5% -10%;
     pointer-events: none;
-}
-
-.background-shade {
-    position: absolute;
-    inset: 0;
-    background: rgba(8, 8, 17, 0.72);
 }
 
 .site-main {
@@ -1304,6 +1312,7 @@ th { color: var(--muted); font-size: 10px; letter-spacing: 0.1em; }
 .validation-summary { color: #ff7aa8; font-size: 12px; }
 .validation-summary ul { margin: 0; padding-left: 18px; }
 .full-button { width: 100%; margin-top: 22px; border: 0; cursor: pointer; }
+.auth-reason { margin: 16px 0 0; border: 1px solid rgba(0, 245, 255, 0.55); padding: 10px 14px; color: var(--cyan); font-size: 13px; }
 .selected-email { margin: 24px 0 4px; color: var(--muted); font-size: 13px; }
 .selected-email strong { color: var(--text); }
 .auth-back { margin-top: 14px; border: 0; background: transparent; color: var(--cyan); cursor: pointer; }

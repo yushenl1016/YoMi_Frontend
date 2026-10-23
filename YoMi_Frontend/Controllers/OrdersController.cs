@@ -64,6 +64,8 @@ namespace YoMi_Frontend.Controllers
                 {
                     var order = await _orders.CreateAsync(MemberId, input, OrderRules.TaiwanNow);
                     TempData["Success"] = order.Status == CustomerOrderStatus.AwaitingQuote ? "需求已送出，請聯絡客服確認報價。" : "訂單已建立，請依付款資訊完成付款。";
+                    // Open the payment dialog only right after creation, not on every later visit.
+                    if (order.Status == CustomerOrderStatus.AwaitingPayment) TempData["OpenPayment"] = true;
                     return RedirectToAction(nameof(Detail), new { id = order.Id });
                 }
                 catch (ArgumentException ex) { ModelState.AddModelError("", ex.Message); }

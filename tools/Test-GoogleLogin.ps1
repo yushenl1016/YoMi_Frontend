@@ -61,10 +61,10 @@ try {
     $loginPage = $client.GetAsync('/email-auth').GetAwaiter().GetResult()
     $loginHtml = $loginPage.Content.ReadAsStringAsync().GetAwaiter().GetResult()
     Assert-Check ([int]$loginPage.StatusCode -eq 200 -and $loginHtml.Contains('action="/account/google"')) 'Member login is missing the Google form.'
-    Assert-Check (-not $loginHtml.Contains('action="/account/login"') -and -not $loginHtml.Contains('action="/account/register"')) 'Legacy password forms remain active.'
-    foreach ($legacyPath in @('/account/login','/account/register','/account/check-email')) {
-        $legacyResponse = $client.PostAsync($legacyPath, [System.Net.Http.StringContent]::new('')).GetAwaiter().GetResult()
-        Assert-Check ([int]$legacyResponse.StatusCode -in @(404,405)) "Legacy endpoint remains active: $legacyPath"
+    Assert-Check ($loginHtml.Contains('action="/account/check-email"') -and -not $loginHtml.Contains('type="password"')) 'First screen must ask only for Email.'
+    foreach ($passwordPath in @('/account/login','/account/register','/account/check-email','/account/transfer')) {
+        $passwordResponse = $client.PostAsync($passwordPath, [System.Net.Http.StringContent]::new('')).GetAwaiter().GetResult()
+        Assert-Check ([int]$passwordResponse.StatusCode -in @(400,405)) "Endpoint accepted a request without CSRF: $passwordPath"
     }
     $memberToken = [regex]::Match($loginHtml, 'name="__RequestVerificationToken"[^>]*value="([^"]+)"').Groups[1].Value
     $memberBody = [System.Net.Http.StringContent]::new('__RequestVerificationToken=' + [uri]::EscapeDataString([System.Net.WebUtility]::HtmlDecode($memberToken)), [System.Text.Encoding]::UTF8, 'application/x-www-form-urlencoded')
@@ -75,7 +75,7 @@ try {
 
     $publicSecret = $client.GetAsync('/google_client_secret/client_secret_271916382546-qdh9njn6elki4gkvb2p6g2kg7im683h5.apps.googleusercontent.com.json').GetAwaiter().GetResult()
     Assert-Check ([int]$publicSecret.StatusCode -eq 404) 'Original public credential URL is accessible.'
-    Write-Output 'PASS: Google test/member entry, disabled legacy routes, no-store, code flow, callback URL, PKCE, nonce/state, minimal scopes, CSRF, invalid callback, member isolation, and public secret removal.'
+    Write-Output 'PASS: Google test/member entry, Email-first form, no-store, code flow, callback URL, PKCE, nonce/state, minimal scopes, CSRF, invalid callback, member isolation, and public secret removal.'
     Write-Output 'A real Google sign-in is still required to verify the returned sub/email.'
 }
 finally {
