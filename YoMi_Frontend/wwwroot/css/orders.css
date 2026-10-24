@@ -10,3 +10,6 @@
 /* Keep the selection-first flow usable without JavaScript. */
 .order-payment-form:not(:has([name=method]:checked)) .order-payment-details{display:none}
 .order-payment-form:not(:has([name=method][value="轉帳"]:checked)) [data-payment-method="轉帳"],.order-payment-form:not(:has([name=method][value="無卡存款"]:checked)) [data-payment-method="無卡存款"]{display:none}
+
+/* Exclusive VIP discounts on the review page reuse the payment-option cards. */
+.order-discount-form{margin:24px 0 0}.order-discount-option>span:first-of-type{flex:1;min-width:0}.order-discount-price{margin-left:auto;color:#6ee7ee;font-weight:700;white-space:nowrap}.order-discount-option.is-disabled{opacity:.55;cursor:not-allowed}.order-discount-option.is-disabled:hover{border-color:#47506a;background:none}.order-discount-form [hidden]{display:none!important}

@@ -20,6 +20,8 @@
 .pet-build-note { padding:18px 22px; border:1px solid rgb(255 230 0 / .24); border-left:3px solid var(--yellow); background:rgb(255 230 0 / .035); margin-bottom:30px; }
 .pet-build-note strong { color:var(--yellow); font-size:13px; }
 .pet-build-note p { margin:5px 0 0; color:#adaebe; font-size:13px; line-height:1.8; }
+.pet-announcements { padding:24px 28px; margin-bottom:24px; }
+.pet-announcements h2 { margin:0 0 12px; font-size:20px; }
 .pet-features { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:44px; }
 .pet-features article { padding:24px 22px; }
 .pet-features article > span { font-size:25px; color:var(--cyan); }
@@ -49,5 +51,5 @@
 .pet-download-unavailable { border:1px solid var(--border); padding:18px; color:#c0c4d5; }
 .desktop-pet-page a:focus-visible,.desktop-pet-page button:focus-visible,.desktop-pet-page summary:focus-visible { outline:2px solid var(--yellow); outline-offset:5px; }
 @media(max-width:1000px) { .pet-hero { gap:24px; padding-inline:0; } .pet-features { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media(max-width:640px) { .pet-hero { grid-template-columns:1fr; gap:20px; padding-bottom:28px; } .pet-hero-copy h2 { font-size:44px; } .pet-lead { font-size:15px; } .pet-art { grid-row:2; } .pet-art img { max-width:280px; } .pet-art-orbit { width:260px; } .pet-download-button { display:flex; padding:17px 14px; font-size:17px; gap:12px; } .pet-features { gap:10px; margin-bottom:24px; } .pet-features article { padding:20px 15px; } .pet-guides,.pet-integrity { grid-template-columns:1fr; gap:16px; } .pet-guides article,.pet-faq,.pet-integrity { padding:22px 18px; } .pet-build-note { padding:15px 18px; } }
+@media(max-width:640px) { .pet-hero { grid-template-columns:1fr; gap:20px; padding-bottom:28px; } .pet-hero-copy h2 { font-size:44px; } .pet-lead { font-size:15px; } .pet-art { grid-row:2; } .pet-art img { max-width:280px; } .pet-art-orbit { width:260px; } .pet-download-button { display:flex; padding:17px 14px; font-size:17px; gap:12px; } .pet-features { grid-template-columns:1fr; gap:10px; margin-bottom:24px; } .pet-features article { padding:18px 20px; } .pet-announcements { padding:22px 18px; } .pet-guides,.pet-integrity { grid-template-columns:1fr; gap:16px; } .pet-guides article,.pet-faq,.pet-integrity { padding:22px 18px; } .pet-build-note { padding:15px 18px; } }
 @media(prefers-reduced-motion:reduce) { .pet-download-button { transition:none; } }

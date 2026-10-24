@@ -12,11 +12,11 @@
     <p class="replica-eyebrow discount-eyebrow">VIP DISCOUNT</p>
     <section class="discount-panel replica-panel">
         <header><h2>VIP 會員折扣一覽</h2><span class="replica-tag">累積消費自動升級</span></header>
-        <div class="discount-grid">
+        <div class="discount-grid" style="--tier-count:@VipRules.Tiers.Count">
         @foreach (var tier in VipRules.Tiers)
         {
-            var discount = tier.Level == 3 ? "97折起" : (tier.Discount * 100).ToString("0").TrimEnd('0') + "折";
-            <article class="discount-card @tier.CssClass"><span>@tier.Icon</span><h3 class="vip-tier-name">@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong class="vip-discount">@discount</strong></article>
+            var discount = tier.ShortLabel;
+            <article class="discount-card @tier.CssClass" style="@tier.InlineStyle"><span>@tier.Icon</span><h3 class="vip-tier-name">@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong class="vip-discount">@discount</strong></article>
         }
         </div>
     </section>
@@ -34,5 +34,5 @@
             <article class="replica-price-row"><div><h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><div><strong>@item.Price</strong>@if (item.IsOrderable) { <a class="price-order-link" href="@Url.Action("New", "Orders", new { itemId = item.Id })">@(item.OrderUnitPrice.HasValue ? "立即下單 →" : "特殊單洽詢 →")</a> }</div></article>
         }
     </div>
-    <aside class="replica-notice replica-panel"><h3>ⓘ 注意事項</h3><ul><li>所有價格以新台幣（NT$）計算，實際報價依需求與難度調整。</li><li>VIP 折扣適用於一般消費項目，趣味單、代解 3x3、代儲值為固定價位不打折。</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積金額計算。</li><li>如有特殊需求或自訂服務，請直接洽詢客服報價。</li></ul></aside>
+    <aside class="replica-notice replica-panel"><h3>ⓘ 注意事項</h3><ul><li>所有價格以新台幣（NT$）計算，實際報價依需求與難度調整。</li><li>VIP 折扣適用於一般消費項目，體驗單、趣味單、代解 3x3、代儲值為固定價位不打折（含生日與白金首單優惠）。</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積金額計算。</li><li>如有特殊需求或自訂服務，請直接洽詢客服報價。</li></ul></aside>
 </section>

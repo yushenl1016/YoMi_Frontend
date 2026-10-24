@@ -17,11 +17,14 @@ namespace YoMi_Frontend.Services
     {
         private readonly DBContext _db;
         private readonly DbConnection _connection;
+        internal DbConnection Connection => _connection;
         public DesktopPetStore(DBContext db, IConfiguration config)
         {
             _db = db; _connection = db.Database.GetDbConnection();
             // This scoped context is shared with GoogleMemberLogin only for this desktop request.
             var builder = new SqlConnectionStringBuilder(_connection.ConnectionString) { Encrypt = true, TrustServerCertificate = config.GetValue<bool>("DesktopPet:TrustServerCertificate") };
+            // LocalDB is a local named pipe and does not support TLS; remote SQL always requires it.
+            if (builder.DataSource.StartsWith("(localdb)\\", StringComparison.OrdinalIgnoreCase)) builder.Encrypt = false;
             _connection.ConnectionString = builder.ConnectionString;
         }
         private async Task<DbCommand> Command(string sql, params (string Name, object Value)[] values)
@@ -77,9 +80,10 @@ AND m.PasswordHash COLLATE Latin1_General_100_BIN2=s.GoogleSubject;", ("@Hash", 
             // One serializable transaction handles both creation and compare-and-swap.
             using var command = await Command(@"SET XACT_ABORT ON;
 BEGIN TRANSACTION;
-DECLARE @Current bigint;
-SELECT @Current=Revision FROM dbo.YoMiDocuments WITH(UPDLOCK,HOLDLOCK) WHERE FrontendMemberId=@Id AND DocumentKind=@Kind;
-IF @Current IS NULL AND @Revision=0
+DECLARE @Current bigint, @Managed bit=0;
+SELECT @Current=Revision,@Managed=CASE WHEN @Kind='profile' AND JSON_QUERY(Payload,'$._economy') IS NOT NULL THEN 1 ELSE 0 END FROM dbo.YoMiDocuments WITH(UPDLOCK,HOLDLOCK) WHERE FrontendMemberId=@Id AND DocumentKind=@Kind;
+IF @Managed=1 SELECT CAST(-1 AS bigint);
+ELSE IF @Current IS NULL AND @Revision=0
 BEGIN
  INSERT dbo.YoMiDocuments(FrontendMemberId,DocumentKind,Payload) VALUES(@Id,@Kind,@Payload); SELECT CAST(1 AS bigint);
 END
@@ -90,7 +94,9 @@ BEGIN
 END
 ELSE SELECT CAST(NULL AS bigint);
 COMMIT;", ("@Id", memberId), ("@Kind", kind), ("@Payload", payload.GetRawText()), ("@Revision", revision));
-            var next = await command.ExecuteScalarAsync(); return next == null || next is DBNull ? null : Convert.ToInt64(next);
+            var next = await command.ExecuteScalarAsync();
+            if (next != null && !(next is DBNull) && Convert.ToInt64(next) == -1) throw new DesktopEconomyConflictException("此帳號已啟用伺服器結算，請更新桌寵以繼續操作。", "upgrade_required");
+            return next == null || next is DBNull ? null : Convert.ToInt64(next);
         }
         public async Task Revoke(string token)
         {
@@ -99,3 +105,5 @@ COMMIT;", ("@Id", memberId), ("@Kind", kind), ("@Payload", payload.GetRawText())
         }
     }
 }
+
+

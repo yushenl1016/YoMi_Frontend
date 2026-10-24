@@ -42,7 +42,7 @@ namespace YoMi_Frontend.Controllers
             var memberId = AuthCookie.GetMemberId(User);
             if (memberId > 0)
             {
-                status = VipRules.GetStatus(await _portal.GetTotalConsumptionAsync(memberId));
+                status = await _portal.GetVipStatusAsync(memberId);
             }
 
             return View(new VipPageViewModel { Tiers = VipRules.Tiers, Status = status });

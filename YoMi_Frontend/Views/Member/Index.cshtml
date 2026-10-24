@@ -48,16 +48,17 @@
     <div class="record-stats">
         <section class="replica-panel record-stat"><p><svg class="home-icon stat-yellow" aria-hidden="true"><use href="@(icons)#trending" /></svg>累積消費</p><strong class="stat-yellow">NT$@Model.Status.Total.ToString("N0")</strong></section>
         <section class="replica-panel record-stat"><p><svg class="home-icon stat-cyan" aria-hidden="true"><use href="@(icons)#receipt" /></svg>消費筆數</p><strong class="stat-cyan">@Model.Records.Count 筆</strong></section>
-        <section class="replica-panel record-stat record-tier @Model.Status.Tier.CssClass"><p><svg class="home-icon" aria-hidden="true"><use href="@(Url.Content("~/images/home-icons.svg"))#star" /></svg>VIP 等級</p><div><span>@Model.Status.Tier.Icon</span><strong class="vip-tier-name">@Model.Status.Tier.Name</strong></div></section>
+        <section class="replica-panel record-stat record-tier @Model.Status.Tier.CssClass" style="@Model.Status.Tier.InlineStyle"><p><svg class="home-icon" aria-hidden="true"><use href="@(Url.Content("~/images/home-icons.svg"))#star" /></svg>VIP 等級</p><div><span>@Model.Status.Tier.Icon</span><strong class="vip-tier-name">@Model.Status.Tier.Name</strong></div></section>
     </div>
     @if (Model.Status.NextThreshold.HasValue)
     {
-        <section class="record-progress replica-panel @Model.Status.Tier.CssClass">
-            <div><span>升級進度</span><span>距離下一等級還差 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</span></div>
+        <section class="record-progress replica-panel @Model.Status.Tier.CssClass" style="@Model.Status.Tier.InlineStyle">
+            <div><span>累積消費升級進度</span><span>距離下一門檻還差 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</span></div>
             <partial name="_ReferenceProgress" model="Model.Status" />
-            <div class="progress-thresholds"><span>NT$@Model.Status.Tier.Threshold.ToString("N0")</span><span>NT$@Model.Status.NextThreshold.Value.ToString("N0")</span></div>
+            <div class="progress-thresholds"><span>NT$@Model.Status.EarnedTier.Threshold.ToString("N0")</span><span>NT$@Model.Status.NextThreshold.Value.ToString("N0")</span></div>
         </section>
     }
+    <partial name="_VipValidity" model="Model.Status" />
     <section class="replica-records replica-panel">
         <header><h2>消費明細</h2><span class="replica-tag">@Model.Records.Count 筆</span></header>
         @if (Model.Records.Count == 0)

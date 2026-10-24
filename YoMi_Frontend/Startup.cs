@@ -51,6 +51,10 @@ namespace YoMi_Frontend
             services.AddSingleton<DesktopGoogleVerifier>();
             services.AddSingleton<DesktopGoogleExchange>();
             services.AddScoped<DesktopPetStore>();
+            services.AddScoped<DesktopPetOperations>();
+            services.AddScoped<DesktopAnnouncements>();
+            services.AddDataProtection();
+            services.AddSingleton<DesktopRooms>();
             services.AddSingleton(provider => new DesktopPetReleaseService(provider.GetRequiredService<IWebHostEnvironment>().ContentRootPath));
 
             var authentication = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -181,7 +185,14 @@ namespace YoMi_Frontend
             }
             app.UseStaticFiles();
             app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api/desktop"), branch => branch.UseStatusCodePagesWithReExecute("/status/{0}"));
+            // VIP tiers are edited in the admin site; reload them at most once a minute.
+            app.Use(async (context, next) =>
+            {
+                await VipService.RefreshTiersAsync(context.RequestServices.GetRequiredService<DBContext>());
+                await next();
+            });
             app.UseRouting();
+            app.UseWebSockets();
             app.UseAuthentication();
             app.UseAuthorization();
 

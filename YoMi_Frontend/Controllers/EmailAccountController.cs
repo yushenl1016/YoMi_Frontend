@@ -124,7 +124,7 @@ namespace YoMi_Frontend.Controllers
             {
                 var member = await _login.FindLegacyTransferAsync(model.LegacyId);
                 if (member != null)
-                    ViewData["TransferVip"] = VipRules.GetStatus(await _portal.GetTotalConsumptionAsync(member.Id)).Tier.Name;
+                    ViewData["TransferVip"] = (await _portal.GetVipStatusAsync(member.Id)).Tier.Name;
                 return TransferScreen(new TransferTicket
                 {
                     RequestId = Guid.NewGuid(), LegacyId = model.LegacyId,

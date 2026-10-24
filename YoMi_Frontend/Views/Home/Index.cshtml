@@ -57,9 +57,9 @@
             <h2>@siteName</h2>
             <p>@siteSubtitle</p>
             <div class="preview-stats">
-                <div><strong>5 階</strong><span>VIP 等級</span></div>
+                <div><strong>@VipRules.Tiers.Count 階</strong><span>VIP 等級</span></div>
                 <div><strong>85折</strong><span>壽星優惠</span></div>
-                <div><strong>9折</strong><span>至尊折扣</span></div>
+                @if (VipRules.Tiers.LastOrDefault() is { } topTier) { <div><strong>@topTier.ShortLabel</strong><span>@topTier.Name</span></div> }
                 <div><strong>多元</strong><span>服務項目</span></div>
             </div>
         </aside>
@@ -84,14 +84,11 @@
     <div class="hero-grid" aria-hidden="true"></div>
     <div class="container">
         <div class="section-heading"><p class="eyebrow">VIP SYSTEM</p><h2>VIP 等級一覽</h2><p>累積消費自動升級，享受更多專屬折扣與尊榮福利</p></div>
-        <div class="vip-card-grid">
+        <div class="vip-card-grid" style="--tier-count:@VipRules.Tiers.Count">
             @foreach (var tier in VipRules.Tiers)
             {
-                // Homepage summary copy only; the shared benefits/calculation rules stay unchanged.
-                var discount = tier.Level == 3 ? "97折起" : $"{tier.Discount * 100:0.##}折";
-                if (tier.Level == 5) { discount = "9折"; }
-                <article class="vip-mini-card @tier.CssClass">
-                    <span class="vip-icon">@tier.Icon</span><h3 class="vip-tier-name">@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong class="home-discount">@discount</strong>
+                <article class="vip-mini-card @tier.CssClass" style="@tier.InlineStyle">
+                    <span class="vip-icon">@tier.Icon</span><h3 class="vip-tier-name">@tier.Name</h3><p>NT$@tier.Threshold.ToString("N0")+</p><strong class="home-discount">@tier.ShortLabel</strong>
                 </article>
             }
         </div>

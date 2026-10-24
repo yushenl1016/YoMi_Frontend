@@ -27,6 +27,7 @@ namespace YoMi_Frontend.Controllers
             try { return await action(); }
             catch (UnauthorizedAccessException) { return Unauthorized(new { error = "登入驗證失敗，請確認前台會員的 Google 帳號綁定。" }); }
             catch (SecurityTokenException) { return Unauthorized(new { error = "Google 驗證已失效，請重新登入。" }); }
+            catch (DesktopEconomyConflictException error) { return Conflict(new { error = error.Message, code = error.Code }); }
             catch (ArgumentException) { return BadRequest(new { error = "存檔格式不正確，原資料已保留。" }); }
             catch (Exception) { return StatusCode(503, new { error = "同步服務暫時無法使用，進度仍保存在這台電腦。" }); }
         }

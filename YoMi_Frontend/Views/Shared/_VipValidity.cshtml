@@ -1,0 +1,15 @@
+@model VipStatus
+@if (Model.LastConsumptionUtc.HasValue)
+{
+    <div class="next-tier-note">
+        <p>最近一筆可計入 VIP 的消費：@Model.LastConsumptionUtc.Value.AddHours(8).ToString("yyyy/MM/dd")</p>
+        @if (Model.DowngradedLevels > 0)
+        {
+            <p>因未持續消費，已降 @Model.DowngradedLevels 階。新的可計入 VIP 消費入帳後，將依歷史累積金額恢復等級（目前對應 @Model.EarnedTier.Name）。</p>
+        }
+        @if (Model.NextDowngradeUtc.HasValue)
+        {
+            <p>若未再有可計入 VIP 的消費入帳，預計於 @Model.NextDowngradeUtc.Value.AddHours(8).ToString("yyyy/MM/dd") 再降一階。</p>
+        }
+    </div>
+}

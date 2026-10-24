@@ -1,16 +1,48 @@
 @model OrderFormViewModel
+@using YoMi_Admin.Library.Models.Frontend
 @{ ViewData["Title"] = "確認訂單"; ViewData["ReferencePage"] = true; ViewData["PageClass"] = "order-page"; var order = Model.Preview; var input = Model.Input; }
 @section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
+@section Scripts {
+    @* Re-price as soon as a discount is picked; the button covers browsers without JavaScript. *@
+    <script>
+        document.querySelectorAll('[data-discount-choice]').forEach(choice => choice.addEventListener('change', () => choice.form.requestSubmit()));
+        document.querySelectorAll('[data-discount-apply]').forEach(button => { button.hidden = true; });
+    </script>
+}
 <section class="container order-content order-narrow">
     <p class="replica-eyebrow">REVIEW YOUR ORDER</p><h1>確認訂單</h1>
     <div class="order-panel"><h2>@order.ServiceName</h2><dl class="order-facts"><dt>數量</dt><dd>@order.Quantity @order.Unit</dd><dt>原價</dt><dd>NT$ @order.OriginalAmount?.ToString("N0")</dd><dt>適用優惠</dt><dd>@order.DiscountLabel</dd><dt>遊戲暱稱／ID</dt><dd>@order.GameAccount</dd><dt>伺服器</dt><dd>@order.GameServer</dd><dt>聯絡方式</dt><dd>@order.Contact</dd></dl>
         @if (!string.IsNullOrWhiteSpace(order.Requirements)) { <p class="order-prewrap">@order.Requirements</p> }
+        @if (Model.DiscountChoices.Count > 0)
+        {
+            <form asp-action="Review" method="post" class="order-form order-discount-form">
+                <input type="hidden" name="RequestId" value="@input.RequestId" /><input type="hidden" name="ItemId" value="@input.ItemId" /><input type="hidden" name="Quantity" value="@input.Quantity" />
+                <input type="hidden" name="GameAccount" value="@input.GameAccount" /><input type="hidden" name="GameServer" value="@input.GameServer" /><input type="hidden" name="Contact" value="@input.Contact" /><input type="hidden" name="Requirements" value="@input.Requirements" />
+                <fieldset class="order-payment-choices">
+                    <legend>專屬折扣（擇一使用，不與其他優惠疊加）</legend>
+                    @foreach (var choice in Model.DiscountChoices)
+                    {
+                        var left = choice.Period == VipDiscountPeriod.Monthly ? $"本月剩 {choice.Remaining} 次" : $"剩 {choice.Remaining} 次";
+                        <label class="order-payment-option order-discount-option @(choice.Saves ? "" : "is-disabled")">
+                            <input type="radio" name="VipDiscountId" value="@choice.Id" checked="@(order.VipDiscountId == choice.Id)" disabled="@(!choice.Saves)" data-discount-choice />
+                            <span><strong>@choice.Name</strong><small>@left@(choice.Saves ? "" : "・目前的優惠已經比較便宜，不會使用")</small></span>
+                            <span class="order-discount-price">NT$ @choice.Price.ToString("N0")</span>
+                        </label>
+                    }
+                    <label class="order-payment-option order-discount-option">
+                        <input type="radio" name="VipDiscountId" value="0" checked="@(order.VipDiscountId == null)" data-discount-choice />
+                        <span><strong>不使用專屬折扣</strong><small>次數留到下次使用</small></span>
+                    </label>
+                </fieldset>
+                <button type="submit" class="secondary-button" data-discount-apply>更新金額</button>
+            </form>
+        }
         <div class="order-total-row"><span>應付金額</span><strong>NT$ @order.PayableAmount?.ToString("N0")</strong></div>
-        <p class="order-muted">確認後建立訂單，接著查看付款帳戶並上傳付款證明。客服確認入帳後安排接單。</p>
+        <p class="order-muted">@(order.PayableAmount == 0 ? "此為免費訂單，不需付款或上傳證明；確認下單後由客服確認並安排接單。" : "確認後建立訂單，接著查看付款帳戶並上傳付款證明。客服確認入帳後安排接單。")</p>
         <form asp-action="Create" method="post">
             <input type="hidden" name="RequestId" value="@input.RequestId" /><input type="hidden" name="ItemId" value="@input.ItemId" /><input type="hidden" name="Quantity" value="@input.Quantity" />
             <input type="hidden" name="GameAccount" value="@input.GameAccount" /><input type="hidden" name="GameServer" value="@input.GameServer" /><input type="hidden" name="Contact" value="@input.Contact" /><input type="hidden" name="Requirements" value="@input.Requirements" />
-            <input type="hidden" name="ExpectedAmount" value="@input.ExpectedAmount" /><input type="hidden" name="PriceVersion" value="@input.PriceVersion" />
+            <input type="hidden" name="ExpectedAmount" value="@input.ExpectedAmount" /><input type="hidden" name="PriceVersion" value="@input.PriceVersion" /><input type="hidden" name="VipDiscountId" value="@input.VipDiscountId" />
             <div class="order-actions"><button type="submit" class="primary-button">確認下單</button><a class="secondary-button" asp-action="New" asp-route-itemId="@input.ItemId">重新填寫</a></div>
         </form>
     </div>

@@ -11,6 +11,7 @@ namespace YoMi_Frontend.ViewModels
         public FrontendPriceItem Item { get; set; }
         public IReadOnlyList<FrontendPriceItem> Items { get; set; } = Array.Empty<FrontendPriceItem>();
         public CustomerOrder Preview { get; set; }
+        public IReadOnlyList<VipDiscountChoice> DiscountChoices { get; set; } = Array.Empty<VipDiscountChoice>();
     }
     public class MyOrdersViewModel
     {

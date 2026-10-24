@@ -13,40 +13,33 @@
     <aside class="replica-birthday"><span>🎂</span><div><h3>壽星悠咪 VIP — 全場 85 折</h3><p>生日前後各一天（共三天）可擇一天享全場 <strong>85 折</strong> 優惠。例：5/9 生日，可於 5/8、5/9、5/10 中選擇一天使用。</p><p>陸服老闆可要求打手使用海底撈生日快樂動作並附加唱完整首。</p></div></aside>
     @if (Model.Status != null)
     {
-        <section class="replica-status replica-panel @Model.Status.Tier.CssClass">
+        <section class="replica-status replica-panel @Model.Status.Tier.CssClass" style="@Model.Status.Tier.InlineStyle">
             <header><div><p>@User.Identity?.Name 的 VIP 等級</p><h2 class="vip-tier-name">@Model.Status.Tier.Name</h2></div><div><p>累積消費</p><strong>NT$@Model.Status.Total.ToString("N0")</strong></div></header>
+            <partial name="_VipValidity" model="Model.Status" />
             @if (Model.Status.NextThreshold.HasValue)
             {
                 <partial name="_ReferenceProgress" model="Model.Status" />
-                <p class="next-tier-note">距離下一等級還需 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</p>
+                <p class="next-tier-note">累積消費距離下一門檻還需 NT$@((Model.Status.NextThreshold.Value - Model.Status.Total).ToString("N0"))</p>
             }
         </section>
     }
     <div class="replica-tier-list">
     @foreach (var tier in Model.Tiers)
     {
-        <article class="replica-tier @tier.CssClass">
+        <article class="replica-tier @tier.CssClass" style="@tier.InlineStyle">
             <div class="tier-summary"><span class="tier-emoji">@tier.Icon</span><div>
-                <div class="tier-name-row"><h2 class="vip-tier-name">@tier.Name</h2>@if (!string.IsNullOrEmpty(tier.Tag)) { <span class="replica-tag @(tier.Level == 2 ? "tag-recommended" : "")">@tier.Tag</span> }</div>
+                <div class="tier-name-row"><h2 class="vip-tier-name">@tier.Name</h2>@if (!string.IsNullOrEmpty(tier.Tag)) { <span class="replica-tag">@tier.Tag</span> }</div>
                 <p>累積消費滿 <strong>NT$@tier.Threshold.ToString("N0")</strong></p>
                 <span class="tier-discount"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#star" /></svg>@tier.DiscountLabel</span>
             </div></div>
             <div class="tier-benefits"><p>專屬福利</p><ul>
             @foreach (var benefit in tier.Benefits)
             {
-                var displayBenefit = benefit switch
-                {
-                    "抽獎獎品包含刀皮、季度趣味單及年度大型獎品" => "抽獎獎品：刀皮、季度新趣味單、年底大型家電 / 高價值電子產品",
-                    "月／年底中獎機率提升" => "月 / 年底中獎機率 UP",
-                    "優先排單權（非指定打手情況）" => "優先排單權（非指定打手情況下）",
-                    "每月一次免費絕密保底 1000W 單" => "每月額外享有免費一次「絕密保底 1000W」單",
-                    _ => benefit
-                };
-                <li><span aria-hidden="true">✓</span>@displayBenefit</li>
+                <li><span aria-hidden="true">✓</span>@benefit</li>
             }
             </ul></div>
         </article>
     }
     </div>
-    <aside class="replica-notice replica-panel vip-rules"><h3>◆ 補充規則</h3><ul><li>VIP 等級越高，可同時享有所有低階 VIP 福利</li><li>存單金額可累積計算，用於提升 VIP 等級</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積</li><li>代解 3x3、代儲及趣味單為固定價位，恕不適用 VIP 優惠</li><li>白金 VIP 以上的老闆將由客服主動統計累積金額；銀牌與金牌 VIP 老闆，累積消費僅保留 14 天</li><li>若超過 1 個月未下單，VIP 等級將自動降一階</li></ul></aside>
+    <aside class="replica-notice replica-panel vip-rules"><h3>◆ 補充規則</h3><ul><li>VIP 等級越高，可同時享有所有低階 VIP 福利</li><li>存單金額可累積計算，用於提升 VIP 等級</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積</li><li>體驗單、代解 3x3、代儲及趣味單為固定價位，恕不適用 VIP 優惠</li><li>白金 VIP 以上的老闆將由客服主動統計累積金額；銀牌與金牌 VIP 老闆，累積消費僅保留 14 天</li>@if (VipRules.MonthlyDowngradeEnabled) { <li>自最後一筆可計入 VIP 的消費入帳日起，每滿一個月未再消費，VIP 自動降一階，最低為一般會員。以台灣日期計算，當月沒有對應日期時以月底計。</li><li>新的可計入 VIP 消費入帳後，恢復歷史累積消費對應的等級，並重新計時。未付款、取消或已撤銷的消費不計入。</li> }</ul></aside>
 </section>

@@ -226,21 +226,17 @@ namespace YoMi_Frontend.Services
             }
 
             var members = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
-            var totals = await _db.FrontendConsumptionRecord
-                .AsNoTracking()
-                .Where(x => x.CountsForVip && !x.IsReversed)
-                .GroupBy(x => x.UserId)
-                .Select(x => new { UserId = x.Key, Total = x.Sum(y => y.Amount) })
-                .ToDictionaryAsync(x => x.UserId, x => x.Total);
+            var now = DateTime.UtcNow;
+            var summaries = await VipService.Query(_db, now).ToDictionaryAsync(x => x.UserId);
 
             return members.Select(member =>
             {
-                var total = totals.TryGetValue(member.Id, out var value) ? value : 0m;
+                summaries.TryGetValue(member.Id, out var summary);
                 return new AdminMemberViewModel
                 {
                     Member = member,
-                    Total = total,
-                    Status = VipRules.GetStatus(total)
+                    Total = summary?.Total ?? 0m,
+                    Status = VipRules.GetStatus(summary?.Total ?? 0m, summary?.LastConsumptionUtc, now)
                 };
             }).ToList();
         }
@@ -259,7 +255,7 @@ namespace YoMi_Frontend.Services
             return new AdminStatsViewModel
             {
                 TotalUsers = totalUsers,
-                VipMembers = totals.Count(x => x >= 3000m),
+                VipMembers = await VipService.Query(_db, DateTime.UtcNow).CountAsync(x => x.Level > 0),
                 TotalSpending = totalSpending,
                 AverageSpending = totalUsers == 0 ? 0 : Math.Round(totalSpending / totalUsers)
             };
@@ -274,13 +270,7 @@ namespace YoMi_Frontend.Services
                 .ToListAsync();
         }
 
-        public async Task<decimal> GetTotalConsumptionAsync(int userId)
-        {
-            return await _db.FrontendConsumptionRecord
-                .AsNoTracking()
-                .Where(x => x.UserId == userId && x.CountsForVip && !x.IsReversed)
-                .SumAsync(x => (decimal?)x.Amount) ?? 0m;
-        }
+        public Task<VipStatus> GetVipStatusAsync(int userId) => VipService.GetStatusAsync(_db, userId);
 
         public async Task AddConsumptionAsync(int userId, decimal amount, string description, string category, int createdBy)
         {

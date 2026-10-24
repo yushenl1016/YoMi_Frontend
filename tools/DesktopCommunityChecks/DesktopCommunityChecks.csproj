@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.10" />
+    <Compile Include="../../YoMi_Frontend/Services/DesktopAnnouncements.cs" Condition="Exists('../../YoMi_Frontend/Services/DesktopAnnouncements.cs')" Link="DesktopAnnouncements.cs" />
+    <Compile Include="../../YoMi_Frontend/Services/DesktopRooms.cs" Condition="Exists('../../YoMi_Frontend/Services/DesktopRooms.cs')" Link="DesktopRooms.cs" />
+    <Compile Include="../../YoMi_Frontend/Controllers/DesktopCommunityController.cs" Condition="Exists('../../YoMi_Frontend/Controllers/DesktopCommunityController.cs')" Link="DesktopCommunityController.cs" />
+  </ItemGroup>
+</Project>

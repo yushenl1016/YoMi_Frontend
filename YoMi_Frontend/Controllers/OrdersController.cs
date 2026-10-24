@@ -43,8 +43,16 @@ namespace YoMi_Frontend.Controllers
                 try
                 {
                     var model = await FormAsync(input);
-                    model.Preview = await _orders.PreviewAsync(MemberId, input, OrderRules.TaiwanNow);
+                    try { (model.Preview, model.DiscountChoices) = await _orders.PreviewWithChoicesAsync(MemberId, input, OrderRules.TaiwanNow); }
+                    catch (ArgumentException) when (input.VipDiscountId > 0)
+                    {
+                        // The picked discount was just used up elsewhere: fall back to the best one still available.
+                        input.VipDiscountId = null;
+                        (model.Preview, model.DiscountChoices) = await _orders.PreviewWithChoicesAsync(MemberId, input, OrderRules.TaiwanNow);
+                    }
                     if (!model.Preview.PayableAmount.HasValue) return View("New", model);
+                    // Create recomputes with exactly this choice, so the confirmed amount cannot drift.
+                    input.VipDiscountId = model.Preview.VipDiscountId ?? 0;
                     input.ExpectedAmount = model.Preview.PayableAmount;
                     input.PriceVersion = model.Item.UpdatedAt.Ticks;
                     ModelState.Remove(nameof(input.ExpectedAmount)); ModelState.Remove(nameof(input.PriceVersion));
@@ -63,7 +71,8 @@ namespace YoMi_Frontend.Controllers
                 try
                 {
                     var order = await _orders.CreateAsync(MemberId, input, OrderRules.TaiwanNow);
-                    TempData["Success"] = order.Status == CustomerOrderStatus.AwaitingQuote ? "需求已送出，請聯絡客服確認報價。" : "訂單已建立，請依付款資訊完成付款。";
+                    TempData["Success"] = order.Status == CustomerOrderStatus.AwaitingQuote ? "需求已送出，請聯絡客服確認報價。"
+                        : order.PayableAmount == 0 ? "免費訂單已建立，等待客服確認後安排接單。" : "訂單已建立，請依付款資訊完成付款。";
                     // Open the payment dialog only right after creation, not on every later visit.
                     if (order.Status == CustomerOrderStatus.AwaitingPayment) TempData["OpenPayment"] = true;
                     return RedirectToAction(nameof(Detail), new { id = order.Id });

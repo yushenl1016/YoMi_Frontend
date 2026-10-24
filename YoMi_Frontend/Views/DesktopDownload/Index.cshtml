@@ -35,6 +35,12 @@
         <aside class="pet-build-note"><strong>目前提供本機測試版本</strong><p>桌寵連接這台電腦上的測試服務。訪客模式可直接使用；啟動本機前台服務後，可直接按 Google 登入，不需匯入設定檔。正式對外版本將在測試完成後一起更新。</p></aside>
     }
 
+    <section class="replica-panel pet-announcements" aria-labelledby="pet-announcements-title">
+        <h2 id="pet-announcements-title">悠咪公告</h2>
+        <p data-pet-announcements-status role="status">正在載入公告…</p>
+        <div data-pet-announcements></div>
+    </section>
+
     <section class="pet-features" aria-label="桌寵功能">
         <article class="replica-panel"><span aria-hidden="true">⌨</span><h3>跟著打字的桌寵</h3><p>按鍵亮起、桌面散步，忙碌時也有小小陪伴。只統計按鍵次數，不記錄輸入內容。</p></article>
         <article class="replica-panel"><span aria-hidden="true">◷</span><h3>專注與換裝</h3><p>使用專注計時累積獎勵，為悠咪挑選服裝、配件與房間裝飾，打造自己的桌面。</p></article>
@@ -66,7 +72,7 @@
     <section class="pet-faq replica-panel" aria-labelledby="faq-title"><h2 id="faq-title">下載前，你可能想知道</h2>
         <details><summary>為什麼 Windows 可能顯示「已保護您的電腦」？</summary><p>目前的網站下載版尚未取得受信任的程式碼簽章，SmartScreen 可能因檔案或發行者信譽不足而提示。請核對本頁版本、檔名與 SHA-256，並使用 Windows 安全性掃描下載檔案。若出現具體病毒或威脅名稱，請停止執行並聯絡網站管理者。不要關閉防毒或加入排除項目。</p></details>
         <details><summary>如何確認下載檔案完整？</summary><p>在 PowerShell 執行 <code>Get-FileHash -Algorithm SHA256 -LiteralPath "下載的 ZIP 完整路徑"</code>，比對下方校驗碼。相同表示檔案與本次發布內容一致，不代表微軟認證或保證安全。桌寵不需要以系統管理員身分執行。</p></details>
-        <details><summary>需要登入才能使用嗎？</summary><p>不需要。訪客可以使用桌寵、專注與遊戲，進度保存在電腦。按「使用 Google 登入」並在瀏覽器選擇自己的帳號，即可使用會員同步；不需下載或匯入 Google 設定檔。</p></details>
+        <details><summary>需要登入才能使用嗎？</summary><p>訪客可以使用桌寵與音樂，原有存檔會保留。共用房間、購物及遊戲開始需要 Google 登入並連線。會員離線時仍可專注，紀錄先保存，恢復連線後結算獎勵；不需下載或匯入 Google 設定檔。</p></details>
         <details><summary>會記錄我輸入的文字嗎？</summary><p>不會。桌寵只用按鍵事件顯示動畫並累計次數，不保存或上傳輸入文字。</p></details>
         <details><summary>這份 ZIP 裡面包含別人的帳號嗎？</summary><p>不包含。下載包已排除使用者存檔、登入憑證與私密設定。初始的 120 枚專注幣是程式預設值。</p></details>
         <details><summary>支援 Mac、手機或自動更新嗎？</summary><p>這份下載適用 Windows 10／11 的 64 位元電腦。0.7.3 起可在桌寵內下載、安裝更新並自動重啟。未具備更新入口的舊版需先移轉至新版，原本的 Data 必須保留。</p></details>

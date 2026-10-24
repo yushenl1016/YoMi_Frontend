@@ -152,7 +152,8 @@
         @RenderBody()
     </main>
 
-    @if (!isHome)
+    @* The home page renders its own large footer. *@
+    @if (!isHome || isReferencePage)
     {
     <footer class="site-footer">
         <div class="container footer-inner">

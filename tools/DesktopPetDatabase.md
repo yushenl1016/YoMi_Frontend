@@ -1,5 +1,15 @@
 # YoMi_Desktop_Pet：共用前台會員與 MSSQL
 
+## 2026-10-24：新增操作結算與共用社群功能（尚未部署）
+
+新增 `DesktopPetOperations.sql`，只建立 `dbo.YoMiDesktopOperations`，外鍵仍指向既有 `FrontendMember.Id`。餘額、物品與進度仍在 `YoMiDocuments.profile`；原子交易同時修改 profile、增加 Revision、寫入操作收據。請勿清空收據，否則可能破壞重送去重。啟用後舊版整份 profile PUT 會回覆 `upgrade_required`；music 不受影響。
+
+公告儲存在現有 `FrontendSiteSetting` 的 `desktop_pet_announcements`，沿用會員 `Role=admin`。房間由單一網站程序的 WebSocket 服務提供，需 IIS WebSocket Protocol，並保留 Data Protection 金鑰；多 worker 尚不支援。
+
+新 API 為 `/api/desktop/economy/bootstrap`、`state`、`operate`、`/api/desktop/announcements`、`/api/desktop/rooms`。伺服器驗證登入會員，不採信 App 自報會員 ID。離線專注重連結算，購物及遊戲開局需連線；遊戲結果仍由 App 回報，伺服器驗證時間與一次扣票／結算。
+
+本次測試只用獨立 SQL Server LocalDB 假資料，未執行正式 migration。發布前先備份、執行新 SQL、部署前台，再更新桌寵安裝包。完整說明見 `YoMi_Desktop_Pet/docs/SERVER_FEATURES.md`。
+
 桌寵已透過既有 YoMi_Frontend 的 HTTPS API 自動儲存進度。沿用 `YoMi_Frontend/appsettings.json` 的 `ConnectionStrings:DefaultConnection`，資料庫為 `172.16.0.58 / YoMi_Admin`；桌寵不保存 SQL 帳密。
 
 ## 共用資料與關聯

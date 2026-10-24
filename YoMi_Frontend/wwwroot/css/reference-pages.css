@@ -20,22 +20,19 @@
 .reference-page .replica-panel { background: oklch(.11 .025 265 / .9); border: 1px solid oklch(.85 .20 195 / .18); backdrop-filter: blur(12px); clip-path: polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
 .reference-page .replica-tag { display: inline-flex; padding: 3px 10px; font: 700 11px/15px var(--display-font); letter-spacing: .05em; border: 1px solid oklch(.92 .22 95 / .5); color: var(--yellow); background: oklch(.92 .22 95 / .12); box-shadow: 0 0 8px oklch(.92 .22 95 / .2); border-radius: 2px; white-space: nowrap; }
 .reference-page .tag-recommended { color: var(--cyan); background: oklch(.85 .20 195 / .12); border-color: oklch(.85 .20 195 / .5); box-shadow: 0 0 8px oklch(.85 .20 195 / .2); }
+/* VIP tier tags take their tier's color instead of the default yellow. */
+.reference-page .replica-tier .replica-tag { color: var(--tier); background: color-mix(in oklch,var(--tier) 12%,transparent); border-color: color-mix(in oklch,var(--tier) 50%,transparent); box-shadow: 0 0 8px color-mix(in oklch,var(--tier) 20%,transparent); }
 .reference-page .discount-eyebrow { margin-bottom: 16px; }
 .reference-page .discount-panel { padding: 20px; margin-bottom: 24px; }
 .reference-page .discount-panel > header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .reference-page .discount-panel h2 { margin: 0; font-size: 14px; font-weight: 600; color: oklch(.85 .01 200); }
-.reference-page .discount-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 12px; }
+.reference-page .discount-grid { display: grid; grid-template-columns: repeat(var(--tier-count,6),minmax(0,1fr)); gap: 12px; }
 .reference-page .discount-card { padding: 12px; text-align: center; color: var(--tier); background: color-mix(in oklch,var(--tier) 8%,transparent); border: 1px solid color-mix(in oklch,var(--tier) 30%,transparent); clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px)); }
 .reference-page .discount-card > span { display: block; font-size: 20px; line-height: 28px; margin-bottom: 4px; }
 .reference-page .discount-card h3 { margin: 0 0 2px; font: 700 12px/16px var(--display-font); }
 .reference-page .discount-card p { margin: 0 0 4px; font-size: 12px; line-height: 16px; color: oklch(.5 .01 200); }
 .reference-page .discount-card strong { display: block; font: 900 14px/20px var(--display-font); }
 .reference-page .vip-general { --tier: oklch(.60 .01 265); }
-.reference-page .vip-silver { --tier: oklch(.78 .04 200); }
-.reference-page .vip-gold { --tier: oklch(.92 .22 95); }
-.reference-page .vip-platinum { --tier: oklch(.85 .20 195); }
-.reference-page .vip-diamond { --tier: oklch(.72 .22 250); }
-.reference-page .vip-supreme { --tier: oklch(.65 .28 25); }
 .reference-page .replica-birthday { display: flex; align-items: flex-start; gap: 16px; padding: 20px; margin-bottom: 24px; background: oklch(.92 .22 95 / .05); border: 1px solid oklch(.92 .22 95 / .25); clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%); }
 .reference-page .replica-birthday > span { font-size: 24px; line-height: 32px; }
 .reference-page .replica-birthday h3 { margin: 0 0 4px; color: var(--yellow); font-size: 14px; line-height: 20px; letter-spacing: .05em; }
@@ -63,9 +60,6 @@
 .reference-page.vip-page .replica-birthday h3 { font-size: 16px; line-height: 24px; letter-spacing: normal; }
 .reference-page.vip-page .replica-birthday p + p { margin-top: 4px; line-height: 20px; }
 .reference-page.vip-page .vip-general { --tier: var(--cyan); }
-.reference-page.vip-page .vip-silver { --tier: oklch(.72 .05 310); }
-.reference-page.vip-page .vip-platinum { --tier: oklch(.65 .10 250); }
-.reference-page.vip-page .vip-diamond { --tier: oklch(.85 .20 195); }
 .reference-page .replica-status { padding: 20px; margin-bottom: 32px; border-color: color-mix(in oklch,var(--tier) 25%,transparent); }
 .reference-page .replica-status header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; }
 .reference-page .replica-status header > div:last-child { text-align: right; }
@@ -73,16 +67,10 @@
 .reference-page .replica-status h2 { margin: 0; font-size: 18px; line-height: 28px; font-weight: 900; color: var(--tier); }
 .reference-page .replica-status strong { font-size: 18px; line-height: 28px; color: var(--yellow); font-weight: 900; }
 .reference-page .replica-progress { height: 8px; border-radius: 999px; overflow: hidden; background: color-mix(in oklch,var(--tier) 30%,transparent); }
-.reference-page .replica-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--tier); box-shadow: 0 0 8px color-mix(in oklch,var(--tier) 50%,transparent); transition: width .7s; }
-.reference-page .replica-progress .rainbow-progress { background: linear-gradient(90deg,oklch(.85 .20 195),oklch(.75 .25 280),oklch(.65 .28 25),oklch(.85 .20 195)); background-size: 250% auto; animation: supreme-neon 3s linear infinite; }
+.reference-page .replica-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--tier-paint, var(--tier)); box-shadow: 0 0 8px color-mix(in oklch,var(--tier) 50%,transparent); transition: width .7s; }
 .reference-page .replica-status .next-tier-note { margin: 8px 0 0; }
 .reference-page .replica-tier-list { display: grid; gap: 16px; margin-bottom: 40px; }
 .reference-page .replica-tier { display: flex; gap: 24px; padding: 28px; background: color-mix(in oklch,var(--tier) 6%,transparent); border: 1px solid color-mix(in oklch,var(--tier) 25%,transparent); clip-path: polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); transition: transform .3s; }
-.reference-page .replica-tier.vip-supreme { background: oklch(.65 .28 25 / .07); border-color: oklch(.65 .28 25 / .4); }
-.reference-page .replica-tier.vip-silver { background: oklch(.75 .02 265 / .06); border-color: oklch(.75 .02 265 / .25); }
-.reference-page .replica-tier.vip-gold { background: oklch(.50 .1 40 / .06); border-color: oklch(.92 .22 95 / .30); }
-.reference-page .replica-tier.vip-platinum { background: oklch(.82 .08 220 / .06); border-color: oklch(.82 .08 220 / .25); }
-.reference-page .replica-tier.vip-diamond { background: oklch(.74 .2 220 / .06); border-color: oklch(.74 .2 220 / .25); }
 .reference-page .replica-tier:hover { transform: translateY(-2px); }
 .reference-page .tier-summary { display: flex; align-items: center; align-self: flex-start; gap: 16px; flex: 0 0 224px; }
 .reference-page .tier-emoji { font-size: 36px; line-height: 40px; }
@@ -114,9 +102,6 @@
 .reference-page .record-stat > strong { font: 900 24px/32px var(--display-font); text-shadow: 0 0 12px color-mix(in oklch,currentColor 40%,transparent); }
 .reference-page .stat-yellow { color: var(--yellow); }
 .reference-page .stat-cyan { color: var(--cyan); }
-.reference-page.records-page .vip-silver { --tier: oklch(.78 .05 265); }
-.reference-page.records-page .vip-platinum { --tier: oklch(.85 .04 220); }
-.reference-page.records-page .vip-diamond { --tier: oklch(.78 .18 220); }
 .reference-page .record-tier { border-color: color-mix(in oklch,var(--tier) 22%,transparent); background: oklch(.11 .025 265 / .9); }
 .reference-page .record-tier p .home-icon { color: var(--tier); }
 .reference-page .record-tier > div { display: flex; gap: 8px; align-items: center; }
@@ -155,7 +140,12 @@
     .reference-page .discount-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     .reference-page .record-stats { grid-template-columns: minmax(0,1fr); }
     .reference-page .replica-price-row { padding-inline: 16px; }
+    .reference-page .replica-price-row > div:first-child { flex: 1; }
+    .reference-page .replica-price-row > div:last-child { flex-direction: column; align-items: flex-end; gap: 0; flex-shrink: 0; }
+    .reference-page .price-order-link { margin-top: 0; padding-block: 6px; }
+    .reference-page .price-tabs { display: grid; width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .reference-page .price-tabs a { padding: 12px 8px; text-align: center; }
     .reference-page .replica-records th, .reference-page .replica-records td { padding-inline: 6px; }
 }
-@media (prefers-reduced-motion: reduce) { .reference-page .replica-progress .rainbow-progress { animation: none; } .reference-page .replica-tier, .reference-page .replica-progress > span { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .reference-page .replica-tier, .reference-page .replica-progress > span { transition: none; } }
 .price-order-link{display:block;color:#74e3ed!important;font-size:14px;margin-top:8px;text-align:right;text-decoration:none}.price-order-link:focus-visible{outline:2px solid currentColor;outline-offset:4px}

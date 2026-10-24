@@ -34,12 +34,11 @@ namespace YoMi_Frontend.Controllers
                 return RedirectToAction("Index", "Account");
             }
 
-            var total = await _portal.GetTotalConsumptionAsync(id);
             return View(new RecordsPageViewModel
             {
                 Member = member,
                 Records = await _portal.GetConsumptionRecordsAsync(id),
-                Status = VipRules.GetStatus(total),
+                Status = await _portal.GetVipStatusAsync(id),
                 Referrer = await _portal.GetReferrerAsync(id)
             });
         }

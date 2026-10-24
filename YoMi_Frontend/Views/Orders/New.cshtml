@@ -52,7 +52,7 @@
         </div><aside class="order-panel order-summary"><p class="replica-eyebrow">YOUR ORDER</p><h2>服務資訊</h2>
             <strong class="order-total">@(fixedPrice ? $"NT$ {Model.Item.OrderUnitPrice.Value:N0}" : "價格未定")</strong>
             <p>@(fixedPrice ? $"每{unit}價格，下一步確認數量與會員優惠。" : "先送出需求並聯絡客服；報價確認後，再回訂單查看付款資訊。")</p>
-            @if (fixedPrice) { <p class="order-muted">@(Model.Item.AllowVipDiscount ? "適用的 VIP、生日與白金首單優惠由系統判定，擇優計算。" : "此服務為固定價，不適用會員折扣。")</p> }
+            @if (fixedPrice) { <p class="order-muted">@(Model.Item.AllowVipDiscount ? "VIP、生日與專屬折扣擇優計算，不疊加；專屬折扣可在確認訂單時選擇。" : "此服務為固定價，不適用會員折扣。")</p> }
             <p class="order-muted">@(input.IsCustom ? "是否計入 VIP 累積，由客服報價時確認。" : Model.Item.CountsForVip ? "此服務可累積 VIP 消費。" : "此服務不計入 VIP 累積。")</p>
             <a href="/my-records">前往「我的消費」設定生日 →</a>
         </aside></div>

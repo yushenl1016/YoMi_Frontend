@@ -10,13 +10,13 @@ const layout = read('Views/Shared/_Layout.cshtml');
 const css = read('wwwroot/css/home.css');
 assert(home.includes('ViewData["HomeReplica"] = true'));
 assert(layout.includes('var isHome = ViewData["HomeReplica"] is true'));
-assert(layout.includes('@if (!isHome)'));
+assert(layout.includes('@if (!isHome || isReferencePage)'));
 assert.equal((home.match(/class="home-service"/g) || []).length, 3);
 assert.equal((home.match(/class="home-footer"/g) || []).length, 1);
 assert(home.includes('VipRules.Tiers'));
-assert(home.includes('tier.Discount * 100'));
-assert(home.includes('tier.Level == 3 ? "97折起"'));
-assert(home.includes('discount = "9折"'));
+// Tier card copy (97折起, 9折, ...) is admin-managed, never derived from level numbers in the view.
+assert(home.includes('@tier.ShortLabel') && !/tier\.Level ==/.test(home));
+assert(home.includes('--tier-count:@VipRules.Tiers.Count'));
 for (const setting of ['site_name', 'site_description', 'site_subtitle', 'announcement', 'footer_text', 'contact_discord', 'contact_line']) {
     assert(home.includes(`Model.Get("${setting}"`), setting);
 }

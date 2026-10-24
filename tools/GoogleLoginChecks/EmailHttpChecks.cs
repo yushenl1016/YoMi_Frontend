@@ -54,7 +54,7 @@ static class EmailHttpChecks
             db.FrontendMember.Add(new FrontendMember { Id = 78, Email = "flagged@example.test", Name = "Flagged", HasLoggedInNewSite = true });
             db.FrontendMember.Add(new FrontendMember { Id = 79, Email = "pending@example.test", Name = "Pending", EmailPasswordHash = "imported-hash", PasswordHash = "legacy-sub" });
             db.FrontendConsumptionRecord.AddRange(
-                new FrontendConsumptionRecord { UserId = 77, Amount = 6000m, CountsForVip = true },
+                new FrontendConsumptionRecord { UserId = 77, Amount = 6000m, CountsForVip = true, CreatedAt = DateTime.UtcNow },
                 new FrontendConsumptionRecord { UserId = 77, Amount = 99999m, CountsForVip = false },
                 new FrontendConsumptionRecord { UserId = 77, Amount = 99999m, CountsForVip = true, IsReversed = true });
             await db.SaveChangesAsync();
@@ -175,7 +175,43 @@ static class EmailHttpChecks
             Check(migrated.Email == "transfer@example.test" && migrated.Name == "Legacy" && migrated.HasLoggedInNewSite &&
                 FrontendMemberPassword.Verify(migrated, "Password123!") != Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed,
                 "Transfer lost identity or trusted posted Email/ID.");
+            var spending = await db.FrontendConsumptionRecord.SingleAsync(x => x.UserId == 77 && x.CountsForVip && !x.IsReversed);
+            spending.Amount = 30000m;
+            spending.CreatedAt = DateTime.UtcNow.AddMonths(-2).AddDays(-2);
+            await db.SaveChangesAsync();
         }
+        foreach (var path in new[] { "/vip", "/my-records" })
+        {
+            var paused = WebUtility.HtmlDecode(await (await client.GetAsync(path)).Content.ReadAsStringAsync());
+            Check(!paused.Contains("已降") && !paused.Contains("自動降一階"), path + " must not show downgrades while they are paused.");
+            // The paused mechanism must still render correctly once enabled.
+            VipRules.MonthlyDowngradeEnabled = true;
+            try
+            {
+                var response = await client.GetAsync(path);
+                var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+                Check(response.StatusCode == HttpStatusCode.OK && html.Contains("已降 2 階") && html.Contains("目前對應 鑽悠咪"),
+                    path + " must render the downgraded status and earned-tier explanation.");
+                Check(html.Contains("69,999") && html.Contains("VIP 累積消費升級進度") && !html.Contains("還需 NT$-"),
+                    path + " must retain correct earned-tier progress after downgrade.");
+            }
+            finally { VipRules.MonthlyDowngradeEnabled = false; }
+        }
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DBContext>();
+            db.FrontendConsumptionRecord.Add(new FrontendConsumptionRecord { UserId = 77, Amount = 1m, CreatedAt = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+        }
+        VipRules.MonthlyDowngradeEnabled = true;
+        try
+        {
+            var renewedVip = WebUtility.HtmlDecode(await client.GetStringAsync("/vip"));
+            Check(!renewedVip.Contains("因未持續消費") && renewedVip.Contains("預計於"),
+                "A new consumption must remove the expired-status message and render the renewed deadline.");
+        }
+        finally { VipRules.MonthlyDowngradeEnabled = false; }
+        Console.WriteLine("PASS HTTP: VIP downgrade, earned progress and renewed membership render on real member pages");
         await Post("/account/logout", transferSession);
         start = await Page();
         var password = await Post("/account/check-email", start, ("Email", "PASSWORD@example.test"));
