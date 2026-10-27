@@ -8,6 +8,17 @@
     const details = form?.querySelector('[data-payment-details]');
     const backButton = form?.querySelector('[data-payment-back]');
     const proof = form?.querySelector('[name="proof"]');
+    const updateAccounts = panel => {
+        const accountChoices = [...panel.querySelectorAll('[data-account-choice]')];
+        const selected = accountChoices.find(choice => choice.checked)?.value;
+        accountChoices.forEach(choice => {
+            choice.disabled = panel.hidden;
+            choice.required = !panel.hidden;
+        });
+        panel.querySelectorAll('[data-payment-account]').forEach(account => {
+            account.hidden = account.dataset.paymentAccount !== selected;
+        });
+    };
     const updateMethod = () => {
         if (!form) return;
         const selected = methods.find(method => method.checked)?.value;
@@ -17,9 +28,14 @@
         backButton.hidden = !selected;
         form.querySelectorAll('[data-payment-method]').forEach(panel => {
             panel.hidden = panel.dataset.paymentMethod !== selected;
+            updateAccounts(panel);
         });
         title.textContent = selected ? (selected === '轉帳' ? '銀行轉帳付款資訊' : '無卡存款付款資訊') : '選擇付款方式';
     };
+    form?.querySelectorAll('[data-account-choice]').forEach(choice => choice.addEventListener('change', () => {
+        proof.value = '';
+        updateAccounts(choice.closest('[data-payment-method]'));
+    }));
     const resetMethod = () => {
         if (form) form.reset();
         updateMethod();

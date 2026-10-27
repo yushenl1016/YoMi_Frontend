@@ -23,6 +23,8 @@
 .order-transfer-qr img { display: block; width: 280px; max-width: 100%; height: auto; margin: 1rem auto; background: #fff; }
 .order-proof-preview img { display: block; max-width: 100%; max-height: 640px; width: auto; height: auto; margin: 0 auto; border-radius: 8px; }
 .order-payment-choices{border:0;padding:0;margin:16px 0}.order-payment-choices legend{font-size:16px;color:#b6c2d8;margin-bottom:12px}.order-form .order-payment-option{display:flex;gap:14px;align-items:center;border:1px solid #47506a;border-radius:12px;padding:20px;cursor:pointer;margin:12px 0}.order-payment-option:hover,.order-payment-option:focus-within{border-color:#6ee7ee;background:#162e3c}.order-payment-option small{display:block;margin-top:6px;font-weight:400}.order-form .order-payment-option input{width:20px;height:20px;margin:0;padding:0;flex-shrink:0;accent-color:#6ee7ee}.order-payment-back{border:0;background:none;color:#7ce8ee;padding:8px 0;cursor:pointer;font:inherit}.order-payment-form [hidden]{display:none!important}
+.order-payment-option:has(input:checked){border-color:#6ee7ee;background:#162e3c}
+.order-bank-number{display:block;font-size:clamp(1.25rem,6vw,1.75rem);font-weight:700;line-height:1.4}
 /* Keep the selection-first flow usable without JavaScript. */
 .order-payment-form:not(:has([name=method]:checked)) .order-payment-details{display:none}
 .order-payment-form:not(:has([name=method][value="轉帳"]:checked)) [data-payment-method="轉帳"],.order-payment-form:not(:has([name=method][value="無卡存款"]:checked)) [data-payment-method="無卡存款"]{display:none}

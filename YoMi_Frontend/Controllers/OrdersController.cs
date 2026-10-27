@@ -96,26 +96,27 @@ namespace YoMi_Frontend.Controllers
         }
 
         [HttpGet("{id:guid}/transfer-qr")]
-        public async Task<IActionResult> TransferQr(Guid id)
+        public async Task<IActionResult> TransferQr(Guid id, string account = null)
         {
             var order = await _orders.FindAsync(MemberId, id);
             if (order == null || order.Status != CustomerOrderStatus.AwaitingPayment || !(order.PayableAmount > 0)) return NotFound();
             var settings = await _portal.GetSettingsAsync();
-            var account = PaymentAccount.Parse(settings.TryGetValue("payment_transfer", out var value) ? value : null);
-            if (account == null) return NotFound();
-            using var data = QRCodeGenerator.GenerateQrCode(account.TransferPayload(order.PayableAmount.Value), QRCodeGenerator.ECCLevel.M);
+            var selected = PaymentAccount.Select(settings.TryGetValue("payment_transfer", out var value) ? value : null, account);
+            if (selected == null) return NotFound();
+            using var data = QRCodeGenerator.GenerateQrCode(selected.TransferPayload(order.PayableAmount.Value), QRCodeGenerator.ECCLevel.M);
             using var png = new PngByteQRCode(data);
             return File(png.GetGraphic(8), "image/png");
         }
 
         [HttpPost("{id:guid}/proof"), ValidateAntiForgeryToken]
         [RequestSizeLimit(OrderRules.MaxProofBytes + 1048576), RequestFormLimits(MultipartBodyLengthLimit = OrderRules.MaxProofBytes + 1048576)]
-        public Task<IActionResult> UploadProof(Guid id, int version, string method, IFormFile proof) => ExecuteAsync(id, async () =>
+        public Task<IActionResult> UploadProof(Guid id, int version, string method, IFormFile proof, string transferAccount = null, string cardlessAccount = null) => ExecuteAsync(id, async () =>
         {
             if (proof == null || proof.Length <= 0 || proof.Length > OrderRules.MaxProofBytes) throw new ArgumentException("請選擇 5 MB 以下的 JPG、PNG 或 WebP 付款證明。");
             using var stream = new MemoryStream();
             await proof.CopyToAsync(stream);
-            await _orders.UploadProofAsync(MemberId, id, version, stream.ToArray(), method, OrderRules.TaiwanNow);
+            await _orders.UploadProofAsync(MemberId, id, version, stream.ToArray(), method, OrderRules.TaiwanNow,
+                method == "轉帳" ? transferAccount : cardlessAccount);
         }, "付款證明已送出，等待客服核對入帳。");
 
         [HttpGet("{id:guid}/proof")]

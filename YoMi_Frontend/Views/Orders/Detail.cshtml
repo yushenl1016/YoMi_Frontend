@@ -6,6 +6,9 @@
     var canPay = order.Status == CustomerOrderStatus.AwaitingPayment;
     var isPaid = order.Status is CustomerOrderStatus.ProofSubmitted or CustomerOrderStatus.Recruiting or CustomerOrderStatus.InProgress or CustomerOrderStatus.Reviewing or CustomerOrderStatus.Completed;
     var transfer = Model.Get("payment_transfer"); var cardless = Model.Get("payment_cardless");
+    var transferAccounts = PaymentAccount.ParseMany(transfer); var cardlessAccounts = PaymentAccount.ParseMany(cardless);
+    var hasTransfer = transferAccounts.Count > 0 || PaymentAccount.IsLegacyText(transfer);
+    var hasCardless = cardlessAccounts.Count > 0 || PaymentAccount.IsLegacyText(cardless);
     var discord = Model.ContactUrl("contact_discord"); var line = Model.ContactUrl("contact_line");
 }
 @section Styles { <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" /> }
@@ -40,7 +43,7 @@
             @if (order.PayableAmount == 0) { <p>此為零元訂單，等待客服確認後安排接單。</p> }
             else
             {
-                @if (string.IsNullOrWhiteSpace(transfer) && string.IsNullOrWhiteSpace(cardless))
+                @if (!hasTransfer && !hasCardless)
                 {
                     <p>付款帳戶尚未開放，請先聯絡客服取得付款資訊。</p>
                     @if (discord != null) { <a class="secondary-button" href="@discord" target="_blank" rel="noopener">Discord 客服 ↗</a> }
@@ -52,39 +55,53 @@
                         <input type="hidden" name="version" value="@order.Version" />
                         <fieldset class="order-payment-choices" data-payment-choices>
                             <legend>請先選擇付款方式</legend>
-                            @if (!string.IsNullOrWhiteSpace(transfer))
+                            @if (hasTransfer)
                             {
                                 <label class="order-payment-option"><input type="radio" name="method" value="轉帳" required /><span><strong>銀行轉帳</strong><small>查看銀行帳號與轉帳資訊</small></span></label>
                             }
-                            @if (!string.IsNullOrWhiteSpace(cardless))
+                            @if (hasCardless)
                             {
                                 <label class="order-payment-option"><input type="radio" name="method" value="無卡存款" required /><span><strong>無卡存款</strong><small>查看無卡存款帳戶</small></span></label>
                             }
                         </fieldset>
                         <div class="order-payment-details" data-payment-details>
                             <button type="button" class="order-payment-back" data-payment-back hidden>← 返回選擇付款方式</button>
-                            @if (!string.IsNullOrWhiteSpace(transfer))
+                            @foreach (var group in new[] { (Method: "轉帳", Title: "銀行轉帳", Field: "transferAccount", Accounts: transferAccounts, Legacy: transfer, Available: hasTransfer), (Method: "無卡存款", Title: "無卡存款", Field: "cardlessAccount", Accounts: cardlessAccounts, Legacy: cardless, Available: hasCardless) })
                             {
-                                <div data-payment-method="轉帳">
-                                    <h3>銀行轉帳</h3><p class="order-bank">@PaymentAccount.Display(transfer)</p>
-                                    @if (order.Status == CustomerOrderStatus.AwaitingPayment && PaymentAccount.Parse(transfer) != null)
+                                if (!group.Available) { continue; }
+                                <div data-payment-method="@group.Method">
+                                    <h3>@group.Title</h3>
+                                    @if (group.Accounts.Count == 0) { <p class="order-bank">@group.Legacy</p> }
+                                    else
                                     {
-                                        <div class="order-transfer-qr">
-                                            <h3>TWQR 掃碼轉帳</h3>
-                                            <img src="@Url.Action("TransferQr", new { id = order.Id })" alt="本訂單的銀行轉帳 QR Code" width="280" height="280" loading="lazy" />
-                                            <p>使用支援 TWQR 轉帳的銀行 App 掃描，帶入收款帳號及應付金額。送出前請核對帳號與金額。</p>
-                                            <a asp-action="TransferQr" asp-route-id="@order.Id" download="yomi-transfer.png" class="order-back">下載轉帳 QR Code</a>
-                                            <p class="order-muted">使用同一支手機時，可下載圖片後由支援相簿掃碼的銀行 App 讀取；若不支援，請依上方帳號手動轉帳。</p>
-                                        </div>
+                                        <fieldset class="order-payment-choices">
+                                            <legend>選擇銀行</legend>
+                                            @foreach (var account in group.Accounts)
+                                            {
+                                                <label class="order-payment-option">
+                                                    <input type="radio" name="@group.Field" value="@account.Key" data-account-choice checked="@(group.Accounts.Count == 1)" />
+                                                    <span><strong>@account.BankCode @BankCatalog.Banks[account.BankCode].Name</strong></span>
+                                                </label>
+                                            }
+                                        </fieldset>
+                                        @foreach (var account in group.Accounts)
+                                        {
+                                            <div data-payment-account="@account.Key">
+                                                <p class="order-bank">銀行：@account.BankCode @BankCatalog.Banks[account.BankCode].Name<br />帳號：<strong class="order-bank-number">@account.AccountNumber</strong></p>
+                                                @if (group.Method == "轉帳")
+                                                {
+                                                    <div class="order-transfer-qr">
+                                                        <h3>TWQR 掃碼轉帳</h3>
+                                                        <img src="@Url.Action("TransferQr", new { id = order.Id, account = account.Key })" alt="@($"{BankCatalog.Banks[account.BankCode].Name} 帳號 {account.AccountNumber} 的轉帳 QR Code")" width="280" height="280" loading="lazy" />
+                                                        <p>使用支援 TWQR 轉帳的銀行 App 掃描，帶入收款帳號及應付金額。送出前請核對帳號與金額。</p>
+                                                        <a asp-action="TransferQr" asp-route-id="@order.Id" asp-route-account="@account.Key" download="yomi-transfer.png" class="order-back">下載轉帳 QR Code</a>
+                                                        <p class="order-muted">使用同一支手機時，可下載圖片後由支援相簿掃碼的銀行 App 讀取；若不支援，請依上方帳號手動轉帳。</p>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
                                     }
-                                    <p>轉帳完成後，請上傳付款證明，等待客服確認入帳。</p>
-                                </div>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(cardless))
-                            {
-                                <div data-payment-method="無卡存款">
-                                    <h3>無卡存款</h3><p class="order-bank">@PaymentAccount.Display(cardless)</p>
-                                    <p>存款完成後，請上傳付款證明，等待客服確認入帳。</p>
+                                    <p>付款完成後，請上傳付款證明，等待客服確認入帳。</p>
                                 </div>
                             }
                             <div class="order-form">
