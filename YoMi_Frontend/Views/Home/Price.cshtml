@@ -31,7 +31,22 @@
         @if (Model.Items.Count == 0) { <div class="replica-empty">尚無服務項目</div> }
         @foreach (var item in Model.Items)
         {
-            <article class="replica-price-row"><div><h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><div><strong>@item.Price</strong>@if (item.IsOrderable) { <a class="price-order-link" href="@Url.Action("New", "Orders", new { itemId = item.Id })">@(item.OrderUnitPrice.HasValue ? "立即下單 →" : "特殊單洽詢 →")</a> }</div></article>
+            var options = item.Options.OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToList();
+            <article class="replica-price-row"><div>@if (!string.IsNullOrEmpty(item.ImageKey)) { <a class="price-thumb" href="@Url.Content("~/" + item.ImageKey)" target="_blank" rel="noopener" aria-label="@(item.Name + "價目圖，開啟原圖")"><img src="@Url.Content("~/" + item.ImageKey)" alt="" loading="lazy" /></a> }<h3>@item.Name</h3>@if (!string.IsNullOrWhiteSpace(item.Note)) { <span>@item.Note</span> }</div><div><strong>@item.DisplayPrice</strong>@if (item.IsOrderable && options.Count == 0) { <a class="price-order-link" href="@Url.Action("New", "Orders", new { itemId = item.Id })">@(item.OrderUnitPrice.HasValue ? "立即下單 →" : "特殊單洽詢 →")</a> }</div></article>
+            @if (options.Count > 0)
+            {
+                <ul class="replica-price-options" aria-label="@(item.Name + "價位")">
+                @* Untagged options apply to every server; tagged ones are grouped like the 陸服／台服 price boards. *@
+                @foreach (var group in options.GroupBy(x => x.Server).OrderBy(g => g.Key != null))
+                {
+                    if (group.Key != null) { <li class="option-group">@(group.Key)價位</li> }
+                    foreach (var option in group)
+                    {
+                        <li><span class="option-name">@option.Name</span><strong>NT$ @option.UnitPrice.ToString("#,0.##") <small>/ @item.OrderUnit</small></strong>@if (item.IsOrderable) { <a class="price-order-link" href="@Url.Action("New", "Orders", new { itemId = item.Id, optionId = option.Id })" aria-label="@("下單 " + item.Name + " " + option.Server + option.Name)">下單 →</a> }</li>
+                    }
+                }
+                </ul>
+            }
         }
     </div>
     <aside class="replica-notice replica-panel"><h3>ⓘ 注意事項</h3><ul><li>所有價格以新台幣（NT$）計算，實際報價依需求與難度調整。</li><li>VIP 折扣適用於一般消費項目，體驗單、趣味單、代解 3x3、代儲值為固定價位不打折（含生日與白金首單優惠）。</li><li>排位相關消費（帳號租借、代練等）不列入 VIP 累積金額計算。</li><li>如有特殊需求或自訂服務，請直接洽詢客服報價。</li></ul></aside>

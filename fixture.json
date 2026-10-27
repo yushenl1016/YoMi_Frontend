@@ -1,0 +1,26 @@
+{
+  "url": "https://localhost:51587",
+  "dbName": "YoMiDesktopFixture_aaa2fc3a5ceb4bf68fdd1cc5764088f5",
+  "certificatePath": "D:\\Sixdots\\Project\\YoMi\\YoMi_Frontend\\tools\\DesktopCloudFixtureHost\\fixture-ca.pem",
+  "certificateThumbprint": "5CFD12F0797CBDE09A53E1D46C3EE1B69DA0FEAC",
+  "serverCertificateFingerprint": "B5:70:42:23:DE:DD:F3:07:6A:D3:02:78:AB:09:BD:92:4C:CA:B8:DD:63:F4:2A:28:A9:3B:8B:9D:F4:41:F3:9B",
+  "certificateTrusted": false,
+  "processId": 118224,
+  "members": [
+    {
+      "memberId": 1,
+      "sub": "fixture-admin",
+      "role": "admin",
+      "email": "admin@fixture.invalid",
+      "displayName": "Fixture Admin"
+    },
+    {
+      "memberId": 2,
+      "sub": "fixture-user",
+      "role": "user",
+      "email": "user@fixture.invalid",
+      "displayName": "Fixture User"
+    }
+  ],
+  "stopped": true
+}

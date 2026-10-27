@@ -24,28 +24,43 @@ static class SqlChecks
         {
             using var connection=new SqlConnection(cs); await connection.OpenAsync();
             async Task Execute(string sql) { using var cmd=new SqlCommand(sql,connection); await cmd.ExecuteNonQueryAsync(); }
-            await Execute(@"CREATE TABLE dbo.FrontendMember(Id int PRIMARY KEY,HasLoggedInNewSite bit NOT NULL DEFAULT 1,PasswordHash nvarchar(200));
+            await Execute(@"CREATE TABLE dbo.FrontendMember(Id int PRIMARY KEY,Name nvarchar(100) NULL,HasLoggedInNewSite bit NOT NULL DEFAULT 1,PasswordHash nvarchar(200));
 CREATE TABLE dbo.YoMiDocuments(FrontendMemberId int NOT NULL,DocumentKind varchar(20) NOT NULL,Payload nvarchar(max) NOT NULL,Revision bigint NOT NULL DEFAULT 1,UpdatedAtUtc datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),PRIMARY KEY(FrontendMemberId,DocumentKind));
 CREATE TABLE dbo.YoMiSessions(FrontendMemberId int NOT NULL,GoogleSubject nvarchar(200) NOT NULL,TokenHash binary(32) NOT NULL,ExpiresAtUtc datetime2 NOT NULL,RevokedAtUtc datetime2 NULL);
 INSERT dbo.FrontendMember(Id,PasswordHash) VALUES(1,'fixture'),(2,'fixture'),(3,'fixture'),(4,'fixture'),(5,'fixture'),(6,'fixture');
 INSERT dbo.YoMiDocuments(FrontendMemberId,DocumentKind,Payload) VALUES(1,'profile',N'{""profile"":{""displayName"":""Existing"",""custom"":""kept""},""focus"":{""coins"":6543,""activeSeconds"":1790,""completedSessions"":99,""keyCount"":321,""unclaimedRewards"":2},""inventory"":[""neon-lamp"",""outfit-maid""],""equipped"":[""outfit-maid""],""games"":{""day"":"""",""used"":0,""bonus"":4},""baseLayout"":{""version"":2,""theme"":""yumi-esports"",""placements"":[]},""oldCustom"":""preserved internally""}');");
             var migration=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../tools/DesktopPetOperations.sql"));
             await Execute(await File.ReadAllTextAsync(migration)); await Execute(await File.ReadAllTextAsync(migration));
+            await Execute("UPDATE dbo.FrontendMember SET Name=N'Database Name' WHERE Id=1;");
             DesktopPetOperations Ops()=>new(new SqlConnection(cs));
             var ops=Ops();
             var boot=Json(await ops.Bootstrap(1,Payload("{\"focus\":{\"coins\":1}}")));
             Check(Coins(boot)==6543,"bootstrap keeps cloud balance");
+            Check(boot["memberName"].GetValue<string>()=="Database Name","bootstrap uses FrontendMember.Name");
+            var nameBefore=Json(await ops.State(1));
+            await Execute("UPDATE dbo.FrontendMember SET Name=N'Changed Member Name' WHERE Id=1;");
+            var nameAfter=Json(await ops.State(1));
+            Check(nameAfter["memberName"].GetValue<string>()=="Changed Member Name","state refreshes database name");
+            Check(nameBefore["profile"].ToJsonString()==nameAfter["profile"].ToJsonString(),"name refresh never changes progress or revision");
             Check(boot["profile"]["payload"]["profile"]["custom"].GetValue<string>()=="kept","existing custom progress retained");
             Check(boot["profile"]["payload"]["_economy"]==null,"internal authority hidden");
             Check(Json(await ops.Bootstrap(1))["profile"]["revision"].GetValue<long>()==2,"bootstrap only once");
             await Execute("UPDATE dbo.YoMiDocuments SET Payload=JSON_MODIFY(Payload,'$._economy.since','2026-01-01T00:00:00Z') WHERE FrontendMemberId=1;");
-            var end=DateTimeOffset.UtcNow.AddSeconds(-10); var start=end.AddSeconds(-20);
+            var end=DateTimeOffset.UtcNow.AddSeconds(-10); end=new DateTimeOffset(end.Ticks-end.Ticks%TimeSpan.TicksPerSecond+12345,TimeSpan.Zero); var start=end.AddSeconds(-20);
             JsonElement Focus(DateTimeOffset s,DateTimeOffset e,int active)=>JsonSerializer.SerializeToElement(new {startedAt=s.ToString("O"),endedAt=e.ToString("O"),activeSeconds=active,keyCount=20});
             var a=Guid.NewGuid().ToString(); var first=Json(await ops.Operate(1,a,"focus",Focus(start,end,20)));
             Check(Coins(first)==6588,"cross-session focus credits exactly45");
+            using(var precision=new SqlCommand("SELECT FocusStartedAtUtc,FocusEndedAtUtc FROM dbo.YoMiDesktopOperations WHERE FrontendMemberId=1 AND OperationId=@Id",connection))
+            {
+                precision.Parameters.AddWithValue("@Id",Guid.Parse(a));
+                using var row=await precision.ExecuteReaderAsync(); Check(await row.ReadAsync(),"focus receipt exists");
+                Check(row.GetDateTime(0)==start.UtcDateTime && row.GetDateTime(1)==end.UtcDateTime,"focus interval retains datetime2 precision for overlap deduplication");
+            }
+            Check(first["memberName"].GetValue<string>()=="Changed Member Name","operation returns database name");
             var b=Json(await ops.Operate(1,Guid.NewGuid().ToString(),"claim",Payload("{}"))); Check(Coins(b)==6603,"claim credits15");
             var replay=Json(await ops.Operate(1,a,"focus",Focus(start,end,20)));
             Check(Coins(replay)==6603,"A/B/A includes CURRENT balance");
+            Check(replay["memberName"].GetValue<string>()=="Changed Member Name","replay returns current member name");
             Check(replay["receipt"].ToJsonString()==first["receipt"].ToJsonString(),"A/B/A retains original receipt");
             try { await ops.Operate(1,a,"claim",Payload("{}")); throw new Exception("mismatch accepted"); } catch(DesktopEconomyConflictException ex) { Check(ex.Code=="operation_id_reused","mismatch code"); }
             var overlap=Json(await ops.Operate(1,Guid.NewGuid().ToString(),"focus",Focus(start,end,20)));

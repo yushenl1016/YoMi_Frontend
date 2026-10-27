@@ -49,6 +49,10 @@
         <section class="replica-panel record-stat"><p><svg class="home-icon stat-yellow" aria-hidden="true"><use href="@(icons)#trending" /></svg>累積消費</p><strong class="stat-yellow">NT$@Model.Status.Total.ToString("N0")</strong></section>
         <section class="replica-panel record-stat"><p><svg class="home-icon stat-cyan" aria-hidden="true"><use href="@(icons)#receipt" /></svg>消費筆數</p><strong class="stat-cyan">@Model.Records.Count 筆</strong></section>
         <section class="replica-panel record-stat record-tier @Model.Status.Tier.CssClass" style="@Model.Status.Tier.InlineStyle"><p><svg class="home-icon" aria-hidden="true"><use href="@(Url.Content("~/images/home-icons.svg"))#star" /></svg>VIP 等級</p><div><span>@Model.Status.Tier.Icon</span><strong class="vip-tier-name">@Model.Status.Tier.Name</strong></div></section>
+        <section class="replica-panel record-stat record-coupons">
+            <p><svg class="home-icon stat-cyan" aria-hidden="true"><use href="@(icons)#receipt" /></svg>我的優惠券</p>
+            <div><strong>@Model.Coupons.Sum(x => x.Remaining) <small>次剩餘</small></strong><button type="button" data-open-coupons aria-haspopup="dialog" aria-controls="member-coupons" aria-label="查看我的優惠券">查看 →</button></div>
+        </section>
     </div>
     @if (Model.Status.NextThreshold.HasValue)
     {
@@ -76,6 +80,31 @@
         }
     </section>
 </section>
+<dialog id="member-coupons" class="member-coupons-dialog" data-coupons-dialog aria-labelledby="member-coupons-title" aria-describedby="member-coupons-note">
+    <header>
+        <div><h2 id="member-coupons-title">我的優惠券</h2><p>目前 VIP 等級享有的專屬優惠</p></div>
+        <form method="dialog"><button type="submit" aria-label="關閉優惠券清單"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#close" /></svg></button></form>
+    </header>
+    @if (Model.Coupons.Count == 0)
+    {
+        <div class="member-coupons-empty"><svg class="home-icon" aria-hidden="true"><use href="@(icons)#receipt" /></svg><p>目前沒有優惠券</p><span>目前 VIP 等級尚無專屬優惠券。</span></div>
+    }
+    else
+    {
+        <ul class="member-coupons-list">
+            @foreach (var coupon in Model.Coupons)
+            {
+                var monthly = coupon.Discount.Period == VipDiscountPeriod.Monthly;
+                <li class="member-coupon @(coupon.Remaining == 0 ? "is-exhausted" : "")">
+                    <div class="member-coupon-heading"><h3>@coupon.Discount.Name</h3><span class="member-coupon-balance">@(coupon.Remaining > 0 ? $"{(monthly ? "本月剩" : "剩")} {coupon.Remaining} 次" : monthly ? "本月已用完" : "已用完")</span></div>
+                    <p class="member-coupon-offer">@VipRules.Describe(coupon.Discount)</p>
+                    <p class="member-coupon-service">適用單種：@(coupon.ServiceName ?? "可使用 VIP 折扣的單種")</p>
+                </li>
+            }
+        </ul>
+    }
+    <p id="member-coupons-note" class="member-coupons-note">確認訂單時可選擇優惠券使用；未付款訂單也會暫占使用次數。</p>
+</dialog>
 @if (Model.Referrer == null)
 {
     <dialog class="referrer-dialog" data-referrer-dialog aria-labelledby="referrer-dialog-title" aria-describedby="referrer-rule">

@@ -19,9 +19,11 @@ namespace YoMi_Frontend.Controllers
         private readonly CustomerOrderService _orders;
         private readonly PortalService _portal;
         private readonly ILogger<OrdersController> _logger;
+        private readonly DiscordOrderNotificationSignal _notifications;
         private int MemberId => AuthCookie.GetMemberId(User);
-        public OrdersController(CustomerOrderService orders, PortalService portal, ILogger<OrdersController> logger)
-        { _orders = orders; _portal = portal; _logger = logger; }
+        public OrdersController(CustomerOrderService orders, PortalService portal, ILogger<OrdersController> logger,
+            DiscordOrderNotificationSignal notifications)
+        { _orders = orders; _portal = portal; _logger = logger; _notifications = notifications; }
 
         [HttpGet("")]
         public async Task<IActionResult> Index(int page = 1, bool history = false)
@@ -32,8 +34,8 @@ namespace YoMi_Frontend.Controllers
         }
 
         [HttpGet("new")]
-        public async Task<IActionResult> New(int itemId = 0, bool custom = false) =>
-            View(await FormAsync(new OrderInput { ItemId = custom ? 0 : itemId, IsCustom = custom, RequestId = Guid.NewGuid() }));
+        public async Task<IActionResult> New(int itemId = 0, bool custom = false, int? optionId = null) =>
+            View(await FormAsync(new OrderInput { ItemId = custom ? 0 : itemId, OptionId = custom ? null : optionId, IsCustom = custom, RequestId = Guid.NewGuid() }));
 
         [HttpPost("review"), ValidateAntiForgeryToken]
         public async Task<IActionResult> Review(OrderInput input)
@@ -71,6 +73,7 @@ namespace YoMi_Frontend.Controllers
                 try
                 {
                     var order = await _orders.CreateAsync(MemberId, input, OrderRules.TaiwanNow);
+                    _notifications.Notify();
                     TempData["Success"] = order.Status == CustomerOrderStatus.AwaitingQuote ? "需求已送出，請聯絡客服確認報價。"
                         : order.PayableAmount == 0 ? "免費訂單已建立，等待客服確認後安排接單。" : "訂單已建立，請依付款資訊完成付款。";
                     // Open the payment dialog only right after creation, not on every later visit.

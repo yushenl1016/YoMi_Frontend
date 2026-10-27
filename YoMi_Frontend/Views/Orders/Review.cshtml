@@ -16,6 +16,7 @@
         @if (Model.DiscountChoices.Count > 0)
         {
             <form asp-action="Review" method="post" class="order-form order-discount-form">
+                <input type="hidden" name="OptionId" value="@input.OptionId" />
                 <input type="hidden" name="RequestId" value="@input.RequestId" /><input type="hidden" name="ItemId" value="@input.ItemId" /><input type="hidden" name="Quantity" value="@input.Quantity" />
                 <input type="hidden" name="GameAccount" value="@input.GameAccount" /><input type="hidden" name="GameServer" value="@input.GameServer" /><input type="hidden" name="Contact" value="@input.Contact" /><input type="hidden" name="Requirements" value="@input.Requirements" />
                 <fieldset class="order-payment-choices">
@@ -23,9 +24,9 @@
                     @foreach (var choice in Model.DiscountChoices)
                     {
                         var left = choice.Period == VipDiscountPeriod.Monthly ? $"本月剩 {choice.Remaining} 次" : $"剩 {choice.Remaining} 次";
-                        <label class="order-payment-option order-discount-option @(choice.Saves ? "" : "is-disabled")">
-                            <input type="radio" name="VipDiscountId" value="@choice.Id" checked="@(order.VipDiscountId == choice.Id)" disabled="@(!choice.Saves)" data-discount-choice />
-                            <span><strong>@choice.Name</strong><small>@left@(choice.Saves ? "" : "・目前的優惠已經比較便宜，不會使用")</small></span>
+                        <label class="order-payment-option order-discount-option">
+                            <input type="radio" name="VipDiscountId" value="@choice.Id" checked="@(order.VipDiscountId == choice.Id)" data-discount-choice />
+                            <span><strong>@choice.Name</strong><small>@left・選用後扣 1 次</small></span>
                             <span class="order-discount-price">NT$ @choice.Price.ToString("N0")</span>
                         </label>
                     }
@@ -40,10 +41,11 @@
         <div class="order-total-row"><span>應付金額</span><strong>NT$ @order.PayableAmount?.ToString("N0")</strong></div>
         <p class="order-muted">@(order.PayableAmount == 0 ? "此為免費訂單，不需付款或上傳證明；確認下單後由客服確認並安排接單。" : "確認後建立訂單，接著查看付款帳戶並上傳付款證明。客服確認入帳後安排接單。")</p>
         <form asp-action="Create" method="post">
+            <input type="hidden" name="OptionId" value="@input.OptionId" />
             <input type="hidden" name="RequestId" value="@input.RequestId" /><input type="hidden" name="ItemId" value="@input.ItemId" /><input type="hidden" name="Quantity" value="@input.Quantity" />
             <input type="hidden" name="GameAccount" value="@input.GameAccount" /><input type="hidden" name="GameServer" value="@input.GameServer" /><input type="hidden" name="Contact" value="@input.Contact" /><input type="hidden" name="Requirements" value="@input.Requirements" />
             <input type="hidden" name="ExpectedAmount" value="@input.ExpectedAmount" /><input type="hidden" name="PriceVersion" value="@input.PriceVersion" /><input type="hidden" name="VipDiscountId" value="@input.VipDiscountId" />
-            <div class="order-actions"><button type="submit" class="primary-button">確認下單</button><a class="secondary-button" asp-action="New" asp-route-itemId="@input.ItemId">重新填寫</a></div>
+            <div class="order-actions"><button type="submit" class="primary-button">確認下單</button><a class="secondary-button" asp-action="New" asp-route-itemId="@input.ItemId" asp-route-optionId="@input.OptionId">重新填寫</a></div>
         </form>
     </div>
 </section>

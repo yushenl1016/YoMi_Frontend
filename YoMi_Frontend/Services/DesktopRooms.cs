@@ -28,6 +28,10 @@ namespace YoMi_Frontend.Services
         private readonly IDataProtector _protector;
         private readonly Timer _timer;
         private bool _disposed;
+        private long _directoryRevision;
+        private readonly Dictionary<string, DirectoryRow> _directory = new Dictionary<string, DirectoryRow>();
+        private readonly Dictionary<string, Room> _directoryDirty = new Dictionary<string, Room>();
+        private sealed record DirectoryRow(string PublicId, string Title, string HostName, long CreatedAt, int Count, int OnlineCount, int Capacity);
         private long _presenceAt;
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         private static readonly HashSet<string> Statuses = new HashSet<string>(new[] { "focus", "study", "work", "code", "read", "game", "rest" });
@@ -41,7 +45,8 @@ namespace YoMi_Frontend.Services
         };
         private sealed class Room
         {
-            public string Code, Title;
+            public string Code, Title, Visibility = "private", PublicId = RandomHex(16);
+            public long CreatedAt = Now;
             public Dictionary<string, Member> Members = new Dictionary<string, Member>();
             public long ChangedAt;
         }
@@ -57,12 +62,13 @@ namespace YoMi_Frontend.Services
         }
         private sealed class Connection
         {
-            public bool Retired;
+            public bool Retired, DirectorySubscribed;
+            public string RequestId;
             public int UserId, IdentityCount, FrameCount;
-            public string Code, MemberId;
+            public string Code, MemberId, Name;
             public long IdentityWindow, FrameWindow, LastChat, LastKeyboard;
             public WebSocket Socket;
-            public Channel<byte[]> Outbox = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(64) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
+            public Channel<IEnumerable<byte[]>> Outbox = Channel.CreateBounded<IEnumerable<byte[]>>(new BoundedChannelOptions(64) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
         }
         private sealed class ResumeProof
         {
@@ -72,6 +78,9 @@ namespace YoMi_Frontend.Services
             public string Token { get; set; }
             public bool Host { get; set; }
             public long Expires { get; set; }
+            public string Visibility { get; set; }
+            public string PublicId { get; set; }
+            public long CreatedAt { get; set; }
         }
         public DesktopRooms(IDataProtectionProvider protection)
         {
@@ -136,15 +145,52 @@ namespace YoMi_Frontend.Services
         private static object Picture(Member member) => member.Avatar != null && !member.Avatar.StartsWith("preset:") ? new { id = member.Id, key = AvatarKey(member.Avatar), avatar = member.Avatar } : null;
         private void Send(Connection connection, string name, object payload)
         {
-            if (!connection.Outbox.Writer.TryWrite(JsonSerializer.SerializeToUtf8Bytes(new { @event = name, payload }, Json))) connection.Socket.Abort();
+            SendBatch(connection, new[] { Frame(name, payload) });
         }
-        private void Error(Connection c, string code, string message) => Send(c, "room:error", new { code, message });
+        private static byte[] Frame(string name, object payload) => JsonSerializer.SerializeToUtf8Bytes(new { @event = name, payload }, Json);
+        private static void SendBatch(Connection c, IEnumerable<byte[]> frames)
+        { if (!c.Outbox.Writer.TryWrite(frames)) c.Socket.Abort(); }
+        private void Error(Connection c, string code, string message) => Send(c, "room:error", new { code, message, requestId = c.RequestId });
+        private void DirectoryChanged(Room room)
+        { if (room.Visibility == "public") _directoryDirty[room.PublicId] = room; }
+        private void FlushDirectory()
+        {
+            if (_directoryDirty.Count == 0) return;
+            var upserts = new List<DirectoryRow>(); var removed = new List<string>();
+            foreach (var room in _directoryDirty.Values)
+            {
+                var online = room.Members.Values.Count(m => m.Online);
+                if (!_rooms.TryGetValue(room.Code, out var active) || !ReferenceEquals(active, room) || online == 0)
+                { if (_directory.Remove(room.PublicId)) removed.Add(room.PublicId); continue; }
+                var row = new DirectoryRow(room.PublicId, room.Title, room.Members.Values.FirstOrDefault(m => m.Host)?.Name ?? "會員", room.CreatedAt, room.Members.Count, online, MaxMembers);
+                if (!_directory.TryGetValue(room.PublicId, out var previous) || previous != row)
+                { _directory[room.PublicId] = row; upserts.Add(row); }
+            }
+            _directoryDirty.Clear();
+            var frames = new List<byte[]>();
+            for (var start = 0; start < Math.Max(upserts.Count, removed.Count); start += 100)
+                frames.Add(Frame("rooms:changed", new { revision = ++_directoryRevision, upserts = upserts.Skip(start).Take(100).ToArray(), removed = removed.Skip(start).Take(100).ToArray() }));
+            if (frames.Count != 0)
+                foreach (var c in _connections) if (c.DirectorySubscribed && !c.Retired) SendBatch(c, frames);
+        }
+        private static IEnumerable<byte[]> SnapshotFrames(DirectoryRow[] rows, string snapshotId, long revision)
+        {
+            // Serialize a captured snapshot gradually so a healthy large directory cannot fill the frame queue.
+            for (var start = 0; start < Math.Max(1, rows.Length); start += 100)
+                yield return Frame("rooms:snapshot", new { snapshotId, revision, part = start / 100, last = start + 100 >= rows.Length, rooms = rows.Skip(start).Take(100).ToArray() });
+        }
+        private void Subscribe(Connection c)
+        {
+            FlushDirectory(); c.DirectorySubscribed = true;
+            var rows = _directory.Values.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.PublicId, StringComparer.Ordinal).ToArray();
+            SendBatch(c, SnapshotFrames(rows, RandomHex(12), _directoryRevision));
+        }
         private void Broadcast(Room room, string name, object payload)
         { foreach (var member in room.Members.Values) if (member.Online && member.Connection != null) Send(member.Connection, name, payload); }
         private void Update(Room room)
         {
             room.ChangedAt = 0;
-            Broadcast(room, "room:update", new { code = room.Code, title = room.Title, serverNow = Now, members = room.Members.Values.Select(m => new
+            Broadcast(room, "room:update", new { code = room.Code, title = room.Title, visibility = room.Visibility, publicId = room.PublicId, serverNow = Now, members = room.Members.Values.Select(m => new
             { id = m.Id, name = m.Name, host = m.Host, equippedItems = m.Items, joinedAt = m.JoinedAt, keyCount = m.KeyCount, isTyping = m.IsTyping, online = m.Online, seat = m.Seat, status = m.Status, avatarKey = AvatarKey(m.Avatar), listening = m.Listening, baseLayout = m.Layout }).ToArray() });
         }
         private static void Changed(Room room) { if (room.ChangedAt == 0) room.ChangedAt = Now; }
@@ -153,16 +199,16 @@ namespace YoMi_Frontend.Services
             room = null; member = null;
             return c.Code != null && _rooms.TryGetValue(c.Code, out room) && room.Members.TryGetValue(c.MemberId, out member) && ReferenceEquals(member.Connection, c);
         }
-        private void Session(Room room, Member member)
+        private void Session(Room room, Member member, string requestId = null)
         {
-            var proof = new ResumeProof { UserId = member.UserId, Code = room.Code, MemberId = member.Id, Token = member.Token, Host = member.Host, Expires = Now + (long)TimeSpan.FromDays(30).TotalMilliseconds };
-            Send(member.Connection, "room:session", new { code = room.Code, memberId = member.Id, token = member.Token, host = member.Host, resumeKey = _protector.Protect(JsonSerializer.Serialize(proof, Json)) });
+            var proof = new ResumeProof { UserId = member.UserId, Code = room.Code, MemberId = member.Id, Token = member.Token, Host = member.Host, Visibility = room.Visibility, PublicId = room.PublicId, CreatedAt = room.CreatedAt, Expires = Now + (long)TimeSpan.FromDays(30).TotalMilliseconds };
+            Send(member.Connection, "room:session", new { code = room.Code, memberId = member.Id, token = member.Token, host = member.Host, requestId, resumeKey = _protector.Protect(JsonSerializer.Serialize(proof, Json)) });
         }
         private void EnsureHost(Room room)
         {
             if (room.Members.Values.Any(x => x.Host)) return;
             var next = room.Members.Values.FirstOrDefault(x => x.Online) ?? room.Members.Values.FirstOrDefault();
-            if (next != null) { next.Host = true; if (next.Online) Session(room, next); }
+            if (next != null) { next.Host = true; DirectoryChanged(room); if (next.Online) Session(room, next); }
         }
         private void Leave(Connection c, bool retain)
         {
@@ -171,12 +217,13 @@ namespace YoMi_Frontend.Services
                 if (retain) { member.Online = false; member.IsTyping = false; member.OfflineSince = Now; member.Connection = null; }
                 else room.Members.Remove(member.Id);
                 if (room.Members.Count == 0) _rooms.Remove(room.Code); else { EnsureHost(room); Update(room); }
+                DirectoryChanged(room);
             }
             c.Code = null; c.MemberId = null;
         }
-        private static void Identity(Member member, JsonElement payload, string[] owned)
+        private static void Identity(Member member, JsonElement payload, string[] owned, string name)
         {
-            if (Get(payload, "displayName").ValueKind == JsonValueKind.String) member.Name = Clean(Text(payload, "displayName"), 24, "會員");
+            member.Name = string.IsNullOrWhiteSpace(name) ? "會員" : name;
             if (Get(payload, "equippedItems").ValueKind == JsonValueKind.Array) member.Items = Items(payload, owned);
             var layout = Get(payload, "baseLayout"); member.Layout = Layout(layout.ValueKind == JsonValueKind.Object ? layout : member.Layout, member.Items);
             if (Get(payload, "avatar").ValueKind != JsonValueKind.Undefined) member.Avatar = Avatar(Text(payload, "avatar"));
@@ -190,8 +237,8 @@ namespace YoMi_Frontend.Services
                 var old = member.Connection; old.Retired = true; old.Code = null; old.MemberId = null;
                 Error(old, "session_replaced", "此會員已在另一個視窗連線。"); old.Outbox.Writer.TryComplete();
             }
-            Identity(member, payload, owned); member.Connection = c; member.Online = true; member.OfflineSince = 0;
-            c.Code = room.Code; c.MemberId = member.Id; Session(room, member);
+            Identity(member, payload, owned, c.Name); member.Connection = c; member.Online = true; member.OfflineSince = 0;
+            c.Code = room.Code; c.MemberId = member.Id; Session(room, member, c.RequestId); DirectoryChanged(room);
             var pictures = room.Members.Values.Select(Picture).Where(x => x != null).ToArray();
             if (pictures.Length != 0) Send(c, "room:avatars", pictures);
             if (Picture(member) is object picture) Broadcast(room, "room:avatars", new[] { picture });
@@ -206,7 +253,7 @@ namespace YoMi_Frontend.Services
                 foreach (var prior in other.Members.Values.Where(m => m.UserId == c.UserId && !ReferenceEquals(m, member)).ToArray())
                 {
                     if (prior.Connection != null && !ReferenceEquals(prior.Connection, c)) { prior.Connection.Retired = true; Error(prior.Connection, "session_replaced", "此會員已在另一個視窗連線。"); prior.Connection.Outbox.Writer.TryComplete(); }
-                    other.Members.Remove(prior.Id); if (other.Members.Count == 0) _rooms.Remove(other.Code); else { EnsureHost(other); Update(other); }
+                    other.Members.Remove(prior.Id); if (other.Members.Count == 0) _rooms.Remove(other.Code); else { EnsureHost(other); Update(other); } DirectoryChanged(other);
                 }
             if (member == null)
             {
@@ -228,11 +275,32 @@ namespace YoMi_Frontend.Services
         }
         private void Dispatch(Connection c, string name, JsonElement payload, string[] owned)
         {
+            c.RequestId = name == "room:create" || name == "room:join" || name == "room:join-public" || name == "room:current" || name == "room:resume" ? Clean(Text(payload, "requestId"), 80, null) : null;
+            if (name == "rooms:subscribe") { Subscribe(c); return; }
+            if (name == "rooms:unsubscribe") { c.DirectorySubscribed = false; return; }
+            if (name == "room:current")
+            {
+                var room = _rooms.Values.FirstOrDefault(r => r.Members.Values.Any(m => m.UserId == c.UserId));
+                if (room == null) Send(c, "room:current-result", new { requestId = c.RequestId, found = false });
+                else Join(c, room, payload, owned);
+                return;
+            }
+            if (name == "room:join-public")
+            {
+                var publicId = Text(payload, "publicId");
+                var room = _rooms.Values.FirstOrDefault(r => r.Visibility == "public" && r.PublicId == publicId && r.Members.Values.Any(m => m.Online));
+                if (room == null) { Error(c, "room_missing", "房間已關閉，請重新選擇。"); return; }
+                Join(c, room, payload, owned); return;
+            }
             if (name == "ping") { Send(c, "pong", new { serverNow = Now }); return; }
             if (name == "room:create")
             {
-                Leave(c, false); string code; do { code = RandomHex(3).ToUpperInvariant(); } while (_rooms.ContainsKey(code));
-                var room = new Room { Code = code, Title = Clean(Text(payload, "title"), 32, "悠咪電競自習室") };
+                var visibility = Get(payload, "visibility").ValueKind == JsonValueKind.Undefined ? "private" : Text(payload, "visibility");
+                if (visibility != "public" && visibility != "private") { Error(c, "invalid_visibility", "請選擇公開或私人房間。"); return; }
+                if (Get(payload, "title").ValueKind != JsonValueKind.Undefined && Clean(Text(payload, "title"), 32).Length == 0)
+                { Error(c, "invalid_title", "請輸入房間名稱。"); return; }
+                string code; do { code = RandomHex(3).ToUpperInvariant(); } while (_rooms.ContainsKey(code));
+                var room = new Room { Code = code, Title = Clean(Text(payload, "title"), 32, "悠咪電競自習室"), Visibility = visibility };
                 _rooms.Add(code, room); Join(c, room, payload, owned); return;
             }
             if (name == "room:join" || name == "room:resume")
@@ -244,7 +312,8 @@ namespace YoMi_Frontend.Services
                 if (!_rooms.TryGetValue(code, out var room))
                 {
                     if (proof?.Host != true) { Error(c, "room_missing", "房間尚未恢復，正在等候房主重新連線。"); return; }
-                    room = new Room { Code = code, Title = Clean(Text(payload, "title"), 32, "悠咪電競自習室") }; _rooms.Add(code, room);
+                    room = new Room { Code = code, Title = Clean(Text(payload, "title"), 32, "悠咪電競自習室"), Visibility = proof.Visibility == "public" ? "public" : "private",
+                        PublicId = Regex.IsMatch(proof.PublicId ?? "", "^[0-9a-f]{32}$") ? proof.PublicId : RandomHex(16), CreatedAt = proof.CreatedAt > 0 ? proof.CreatedAt : Now }; _rooms.Add(code, room);
                 }
                 if (proof != null && room.Members.TryGetValue(proof.MemberId, out var existing) && (existing.UserId != c.UserId || existing.Token != proof.Token))
                 { Error(c, "invalid_session", "房間憑證無效，請重新加入。"); return; }
@@ -260,7 +329,8 @@ namespace YoMi_Frontend.Services
                     self.Seat = seat.Value; Update(current); break;
                 case "status:set": self.Status = Statuses.Contains(Text(payload, "status") ?? "") ? Text(payload, "status") : "focus"; Changed(current); break;
                 case "identity:update":
-                    var previous = self.Avatar; Identity(self, payload, owned);
+                    var previous = self.Avatar; var previousName = self.Name; Identity(self, payload, owned, c.Name);
+                    if (self.Host && previousName != self.Name) DirectoryChanged(current);
                     if (previous != self.Avatar && Picture(self) is object picture) Broadcast(current, "room:avatars", new[] { picture }); Changed(current); break;
                 case "keyboard:activity":
                     if (Now - c.LastKeyboard < 120) return; c.LastKeyboard = Now;
@@ -281,12 +351,13 @@ namespace YoMi_Frontend.Services
                 {
                     foreach (var member in room.Members.Values.ToArray())
                     {
-                        if (!member.Online && now - member.OfflineSince > ResumeGraceMs) { room.Members.Remove(member.Id); Changed(room); }
+                        if (!member.Online && now - member.OfflineSince > ResumeGraceMs) { room.Members.Remove(member.Id); Changed(room); DirectoryChanged(room); }
                         else if (member.IsTyping && now - member.LastKeyAt > 900) { member.IsTyping = false; Changed(room); }
                     }
                     if (room.Members.Count == 0) { _rooms.Remove(room.Code); continue; }
                     EnsureHost(room); if (room.ChangedAt != 0 && now - room.ChangedAt >= 250) Update(room);
                 }
+                FlushDirectory();
                 if (now - _presenceAt >= 15000) { _presenceAt = now; foreach (var c in _connections) Send(c, "presence", new { online = _connections.Count }); }
             }
         }
@@ -294,7 +365,8 @@ namespace YoMi_Frontend.Services
         {
             try
             {
-                await foreach (var frame in c.Outbox.Reader.ReadAllAsync(cancellation))
+                await foreach (var batch in c.Outbox.Reader.ReadAllAsync(cancellation))
+                foreach (var frame in batch)
                 {
                     using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation); timeout.CancelAfter(TimeSpan.FromSeconds(10));
                     await c.Socket.SendAsync(new ArraySegment<byte>(frame), WebSocketMessageType.Text, true, timeout.Token);
@@ -307,11 +379,11 @@ namespace YoMi_Frontend.Services
             }
             catch (Exception error) when (error is WebSocketException || error is OperationCanceledException || error is ObjectDisposedException || error is IOException) { c.Socket.Abort(); }
         }
-        public async Task HandleAsync(HttpContext context, int memberId, Func<Task<bool>> validateSession, Func<Task<string[]>> ownedItems)
+        public async Task HandleAsync(HttpContext context, int memberId, Func<Task<bool>> validateSession, Func<Task<string[]>> ownedItems, Func<Task<string>> memberName)
         {
             using var socket = await context.WebSockets.AcceptWebSocketAsync();
             var c = new Connection { UserId = memberId, Socket = socket };
-            lock (_gate) { if (_disposed) return; _connections.Add(c); Send(c, "presence", new { online = _connections.Count }); }
+            lock (_gate) { if (_disposed) return; _connections.Add(c); Send(c, "presence", new { online = _connections.Count }); Send(c, "rooms:capabilities", new { version = 1 }); }
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             var pump = Pump(c, cancellation.Token); var validatedAt = Now;
             try
@@ -328,19 +400,21 @@ namespace YoMi_Frontend.Services
                         if (received.MessageType != WebSocketMessageType.Text || message.Length + received.Count > MaxFrameBytes) { Error(c, "invalid_frame", "房間封包格式或大小不正確。"); return; }
                         message.Write(buffer, 0, received.Count);
                     } while (!received.EndOfMessage);
-                    if (Now - validatedAt >= 30000) { if (!await validateSession()) { Error(c, "auth_expired", "登入已失效，請重新登入。"); return; } validatedAt = Now; }
                     using var document = JsonDocument.Parse(message.ToArray(), new JsonDocumentOptions { MaxDepth = 12 });
                     var name = Text(document.RootElement, "event"); var payload = Get(document.RootElement, "payload");
+                    c.RequestId = Clean(Text(payload, "requestId"), 80, null);
+                    if (Now - validatedAt >= 30000) { if (!await validateSession()) { Error(c, "auth_expired", "登入已失效，請重新登入。"); return; } validatedAt = Now; }
                     if (name == null || (payload.ValueKind != JsonValueKind.Object && payload.ValueKind != JsonValueKind.Undefined)) { Error(c, "invalid_frame", "房間封包格式不正確。"); return; }
                     if (Now - c.FrameWindow >= 1000) { c.FrameWindow = Now; c.FrameCount = 0; }
                     if (++c.FrameCount > 30) { Error(c, "rate_limit", "房間操作過於頻繁。"); return; }
-                    var identity = name == "identity:update" || name == "room:create" || name == "room:join" || name == "room:resume";
+                    var identity = name == "identity:update" || name == "room:create" || name == "room:join" || name == "room:resume" || name == "room:join-public" || name == "room:current";
                     if (identity)
                     {
                         if (Now - c.IdentityWindow >= 10000) { c.IdentityWindow = Now; c.IdentityCount = 0; }
-                        if (++c.IdentityCount > 20) continue;
+                        if (++c.IdentityCount > 20) { Error(c, "rate_limit", "房間操作過於頻繁，請稍後重試。"); continue; }
                     }
                     var inventory = identity ? await ownedItems() : Array.Empty<string>();
+                    if (identity) c.Name = await memberName();
                     lock (_gate) { if (_disposed || c.Retired) return; Dispatch(c, name, payload, inventory); }
                 }
             }

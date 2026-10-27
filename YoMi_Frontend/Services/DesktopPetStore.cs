@@ -65,6 +65,12 @@ WHERE s.TokenHash=@Hash AND s.RevokedAtUtc IS NULL AND s.ExpiresAtUtc>SYSUTCDATE
 AND m.PasswordHash COLLATE Latin1_General_100_BIN2=s.GoogleSubject;", ("@Hash", TokenHash(token)));
             var id = await command.ExecuteScalarAsync(); return id == null || id is DBNull ? null : Convert.ToInt32(id);
         }
+        public async Task<string> MemberName(int memberId)
+        {
+            using var command = await Command("SELECT Name FROM dbo.FrontendMember WHERE Id=@Id;", ("@Id", memberId));
+            var name = await command.ExecuteScalarAsync() as string;
+            return string.IsNullOrWhiteSpace(name) ? "會員" : name;
+        }
         public async Task<Dictionary<string, object>> Documents(int memberId)
         {
             using var command = await Command("SELECT DocumentKind,Payload,Revision,UpdatedAtUtc FROM dbo.YoMiDocuments WHERE FrontendMemberId=@Id;", ("@Id", memberId));

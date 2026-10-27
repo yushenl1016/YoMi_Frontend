@@ -67,6 +67,10 @@ namespace YoMi_Frontend.Controllers
                 var document = JsonSerializer.SerializeToElement(profile);
                 if (!document.TryGetProperty("payload", out var payload) || !payload.TryGetProperty("inventory", out var inventory) || inventory.ValueKind != JsonValueKind.Array) return Array.Empty<string>();
                 return inventory.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()).ToArray();
+            }, async () =>
+            {
+                using var scope = _scopes.CreateScope();
+                return await scope.ServiceProvider.GetRequiredService<DesktopPetStore>().MemberName(member.Value);
             });
         }
         private async Task<int?> RoomMember(string token)

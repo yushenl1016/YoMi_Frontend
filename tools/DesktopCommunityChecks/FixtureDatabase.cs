@@ -43,6 +43,11 @@ namespace YoMi_Frontend.Services
             await Open();
             return token?.StartsWith("fixture-") == true && int.TryParse(token.Substring(8), out var id) && id > 0 && !Revoked.Contains(id) ? id : null;
         }
+        public async Task<string> MemberName(int member)
+        {
+            await Open();
+            return await _db.FrontendMember.Where(x=>x.Id==member).Select(x=>x.Name).SingleOrDefaultAsync() ?? "會員";
+        }
         public async Task<Dictionary<string, object>> Documents(int member)
         {
             await Open();

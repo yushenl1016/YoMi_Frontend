@@ -41,6 +41,7 @@ namespace YoMi_Frontend
             services.AddDbContext<DBContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<PortalService>();
+            services.AddSingleton<DiscordOrderNotificationSignal>();
             services.AddScoped(provider => new DiscordOrderNotificationService(provider.GetRequiredService<DBContext>(),
                 provider.GetRequiredService<IConfiguration>(), provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<DiscordOrderNotificationService>>()));
             services.AddHostedService<DiscordOrderNotificationHostedService>();

@@ -25,8 +25,7 @@
         }
         @if (order.Status == CustomerOrderStatus.Recruiting) { <div class="order-notice">已確認入帳，正在安排接單員工。</div> }
         @if (order.Status == CustomerOrderStatus.InProgress) { <div class="order-notice">接單人員已選定，服務進行中；如需協助，請聯絡客服。</div> }
-        @if (order.Status == CustomerOrderStatus.Reviewing) { <div class="order-notice">此訂單已完成，感謝您的使用。消費紀錄將於客服審核後更新至「我的消費」。</div> }
-        @if (order.Status == CustomerOrderStatus.Completed) { <div class="order-notice">此訂單已完成，消費紀錄已更新。<a href="/my-records">查看我的消費 →</a></div> }
+        @if (order.Status == CustomerOrderStatus.Reviewing || order.Status == CustomerOrderStatus.Completed) { <div class="order-notice">此訂單已完成，消費紀錄已更新。<a href="/my-records">查看我的消費 →</a></div> }
         @if (canPay)
         {
             <div class="order-panel" id="order-payment-entry" hidden>

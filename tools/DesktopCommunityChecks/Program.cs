@@ -64,6 +64,8 @@ async Task<JsonElement> Receive(ClientWebSocket client, string name, Func<JsonEl
         { var payload = frame.GetProperty("payload").Clone(); if (match == null || match(payload)) return payload; }
     }
 }
+if (!args.Contains("--serve")) DirectoryChecks.Run(Check);
+if (args.Contains("--directory-only")) { Console.WriteLine($"Directory checks passed: {checks}"); return; }
 try
 {
     app = await Start();
@@ -73,6 +75,11 @@ try
         db.FrontendMember.AddRange(new FrontendMember { Id = 1, Name = "Admin", Role = "admin" }, new FrontendMember { Id = 2, Name = "Member", Role = "user" });
         db.FrontendSiteSetting.Add(new FrontendSiteSetting { Key = "unrelated", Value = "keep", Label = "Other", Description = "", UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
+    }
+    if (args.Contains("--serve"))
+    {
+        Console.WriteLine("FIXTURE_URL=" + Url());
+        await app.WaitForShutdownAsync(); return;
     }
     var list = await Api("GET", "announcements", null, null);
     Check(!list.GetProperty("canEdit").GetBoolean() && list.GetProperty("announcements").GetArrayLength() == 0, "anonymous public empty list");
@@ -94,12 +101,46 @@ try
         try { await unauth.ConnectAsync(new Uri(Url().Replace("http:", "ws:") + "/api/desktop/rooms"), CancellationToken.None); Check(false, "anonymous room denied"); }
         catch (WebSocketException) { Check(true, "anonymous room denied"); }
     }
+    {
+        var directoryHost = await Connect(40); var watch = await Connect(41);
+        Check((await Receive(watch, "rooms:capabilities")).GetProperty("version").GetInt32() == 1, "wire advertises directory capability");
+        await Send(watch, "rooms:subscribe", new { });
+        Check((await Receive(watch, "rooms:snapshot")).GetProperty("rooms").GetArrayLength() == 0, "authenticated wire subscription receives empty snapshot");
+        var started = DateTime.UtcNow;
+        await Send(directoryHost, "room:create", new { visibility = "public", title = "Wire public", requestId = "wire-create" });
+        var createdSession = await Receive(directoryHost, "room:session");
+        var change = await Receive(watch, "rooms:changed"); var publicId = change.GetProperty("upserts")[0].GetProperty("publicId").GetString();
+        Check(createdSession.GetProperty("requestId").GetString() == "wire-create" && (DateTime.UtcNow - started).TotalMilliseconds < 1000, "wire public create reaches observer within one second and echoes request id");
+        await Send(watch, "room:join-public", new { publicId, requestId = "wire-join" });
+        Check((await Receive(watch, "room:session")).GetProperty("requestId").GetString() == "wire-join", "wire public join uses authenticated identity and echoes request id");
+        directoryHost.Abort();
+        change = await Receive(watch, "rooms:changed", x => x.GetProperty("upserts").EnumerateArray().Any(r => r.GetProperty("count").GetInt32() == 2 && r.GetProperty("onlineCount").GetInt32() == 1));
+        Check(change.GetProperty("upserts")[0].GetProperty("onlineCount").GetInt32() == 1, "wire disconnect distinguishes occupied and online counts");
+        var recovered = await Connect(40); await Send(recovered, "room:current", new { requestId = "wire-current" });
+        Check((await Receive(recovered, "room:session")).GetProperty("requestId").GetString() == "wire-current", "wire current query recovers retained membership");
+        recovered.Abort(); watch.Abort();
+        var limited = await Connect(43);
+        for (var n = 0; n < 20; n++) { await Send(limited, "room:create", new { requestId = "limit-" + n }); await Receive(limited, "room:session"); }
+        await Send(limited, "room:create", new { requestId = "limited-request" });
+        var limitError = await Receive(limited, "room:error");
+        Check(limitError.GetProperty("code").GetString() == "rate_limit" && limitError.GetProperty("requestId").GetString() == "limited-request", "wire identity rate limit echoes failed request id");
+        limited.Abort();
+    }
     var host = await Connect(1); var guest = await Connect(2);
     await Send(host, "room:create", new { displayName = "Host", title = "Study", equippedItems = new[] { "hw-cat-ears", "idle:face-happy", "background-beach", "decor-plant" }, baseLayout = new { placements = new[] { new { id = "decor-plant", x = .5, y = .8, scale = 1.2, flip = true, layer = "back" } } }, avatar = "preset:face-happy", listening = true });
     var hs = await Receive(host, "room:session"); var code = hs.GetProperty("code").GetString();
     await Send(guest, "room:join", new { code, displayName = "Guest" }); var gs = await Receive(guest, "room:session");
     var room = await Receive(guest, "room:update", x => x.GetProperty("members").GetArrayLength() == 2);
     var h = room.GetProperty("members")[0];
+    Check(h.GetProperty("name").GetString()=="Admin" && room.GetProperty("members")[1].GetProperty("name").GetString()=="Member", "room ignores forged nickname and uses member name");
+    using (var scope = app.Services.CreateScope())
+    {
+        var db=scope.ServiceProvider.GetRequiredService<DBContext>();
+        (await db.FrontendMember.SingleAsync(x=>x.Id==1)).Name="Changed Member"; await db.SaveChangesAsync();
+    }
+    await Send(host,"identity:update",new {displayName="forged again"});
+    room=await Receive(host,"room:update",x=>x.GetProperty("members")[0].GetProperty("name").GetString()=="Changed Member");
+    Check(room.GetProperty("members")[0].GetProperty("name").GetString()=="Changed Member","room refreshes renamed member");
     Check(DesktopPetStore.ActiveConnections == 0, "idle websocket does not retain a database connection");
     Check(h.GetProperty("listening").GetBoolean() && h.GetProperty("avatarKey").GetString() == "preset:face-happy" && h.GetProperty("baseLayout").GetProperty("theme").GetString() == "background-beach", "music/avatar/expanded scene preserved");
     Check(h.GetProperty("baseLayout").GetProperty("placements")[0].GetProperty("x").GetDouble() == .5, "scene coordinates preserved");

@@ -34,9 +34,9 @@ dotnet ef database update --project .\YoMi_Admin.Library\YoMi_Admin.Library.cspr
 
 ## Discord 訂單通知
 
-由前台伺服器背景程序每 15 秒處理共用資料庫中的下單與收款通知，無須同時運行後台發送服務。私密設定放在 `YoMi_Frontend/.secrets/discord-orders.json`，設定 `DiscordOrders:Enabled` 為 `true` 啟用；檔案已排除 Git 與發布輸出，部署時需另行放置。Webhook 不會傳給瀏覽器。
+下單交易成功後立即喚醒前台背景程序處理通知，不等待 Discord 回應才完成下單。背景程序仍每 15 秒掃描共用資料庫，補送待送通知並處理後台確認收款的通知，無須同時運行後台發送服務。私密設定放在 `YoMi_Frontend/.secrets/discord-orders.json`，設定 `DiscordOrders:Enabled` 為 `true` 啟用；檔案已排除 Git 與發布輸出，部署時需另行放置。Webhook 不會傳給瀏覽器。
 
-前後台須連到同一個已套用通知資料表遷移的資料庫。本機修改後請停止 VS 偵錯、重新建置並啟動前台，再下單測試；一般會在 15 秒內發送。完整設定、資料庫更新順序與重試限制見 [後台 README 的 Discord 訂單通知](../YoMi_Admin/README.md#discord-訂單通知)。
+前後台須連到同一個已套用通知資料表遷移的資料庫。本機修改後請停止 VS 偵錯、重新建置並啟動前台，再下單測試；正常下單會立即觸發發送，實際送達時間仍受佇列負載、網路與 Discord 限流影響。完整設定、資料庫更新順序與重試限制見 [後台 README 的 Discord 訂單通知](../YoMi_Admin/README.md#discord-訂單通知)。
 
 ## YoMi_Desktop_Pet 資料庫
 

@@ -26,6 +26,9 @@
         });
     }
 
+    const coupons = document.querySelector('[data-coupons-dialog]');
+    if (coupons) document.querySelector('[data-open-coupons]').addEventListener('click', () => coupons.showModal());
+
     const tabs = document.querySelector('.price-tabs');
     if (!tabs) return;
     let request;

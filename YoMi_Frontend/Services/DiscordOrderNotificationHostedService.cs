@@ -11,8 +11,10 @@ namespace YoMi_Frontend.Services
     {
         private readonly IServiceScopeFactory _scopes;
         private readonly ILogger<DiscordOrderNotificationHostedService> _logger;
-        public DiscordOrderNotificationHostedService(IServiceScopeFactory scopes, ILogger<DiscordOrderNotificationHostedService> logger)
-        { _scopes = scopes; _logger = logger; }
+        private readonly DiscordOrderNotificationSignal _signal;
+        public DiscordOrderNotificationHostedService(IServiceScopeFactory scopes, ILogger<DiscordOrderNotificationHostedService> logger,
+            DiscordOrderNotificationSignal signal)
+        { _scopes = scopes; _logger = logger; _signal = signal; }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -22,7 +24,7 @@ namespace YoMi_Frontend.Services
                 {
                     using var scope = _scopes.CreateScope();
                     await scope.ServiceProvider.GetRequiredService<DiscordOrderNotificationService>().ProcessAsync(stoppingToken);
-                    await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                    await _signal.WaitAsync(TimeSpan.FromSeconds(15), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
                 catch (Exception ex)

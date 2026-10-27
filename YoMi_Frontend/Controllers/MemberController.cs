@@ -23,7 +23,7 @@ namespace YoMi_Frontend.Controllers
             _logger = logger;
         }
 
-        [HttpGet("")]
+        [HttpGet(""), ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public async Task<IActionResult> Index()
         {
             var id = AuthCookie.GetMemberId(User);
@@ -39,7 +39,8 @@ namespace YoMi_Frontend.Controllers
                 Member = member,
                 Records = await _portal.GetConsumptionRecordsAsync(id),
                 Status = await _portal.GetVipStatusAsync(id),
-                Referrer = await _portal.GetReferrerAsync(id)
+                Referrer = await _portal.GetReferrerAsync(id),
+                Coupons = await _portal.GetVipCouponsAsync(id)
             });
         }
 

@@ -20,7 +20,13 @@ namespace YoMi_Frontend.Services
         {
             if(connection.State!=ConnectionState.Open) await connection.OpenAsync();
             var command=connection.CreateCommand(); command.CommandText=sql; command.Transaction=transaction; command.CommandTimeout=15;
-            foreach(var value in parameters) { var p=command.CreateParameter(); p.ParameterName=value.Item1; p.Value=value.Item2??DBNull.Value; command.Parameters.Add(p); }
+            foreach(var value in parameters)
+            {
+                var p = command.CreateParameter(); p.ParameterName=value.Item1; p.Value=value.Item2??DBNull.Value;
+                // SqlClient otherwise rounds DateTime to legacy datetime precision, changing overlap boundaries.
+                if(value.Item2 is DateTime) p.DbType=DbType.DateTime2;
+                command.Parameters.Add(p);
+            }
             return command;
         }
         async Task<DateTimeOffset> Now(DbTransaction tx) { using var cmd=await Command("SELECT SYSUTCDATETIME();",tx); return new DateTimeOffset(DateTime.SpecifyKind((DateTime)await cmd.ExecuteScalarAsync(),DateTimeKind.Utc)); }
@@ -31,7 +37,13 @@ namespace YoMi_Frontend.Services
             return await reader.ReadAsync() ? (JsonNode.Parse(reader.GetString(0)) as JsonObject,reader.GetInt64(1)) : (null,0);
         }
         static bool Managed(JsonObject profile)=>profile?["_economy"] is JsonObject;
-        static object Envelope(JsonObject profile,long revision,DateTimeOffset now,JsonObject receipt=null)=>new { ok=true, receipt, profile=new { payload=DesktopPetDocuments.Project("profile",profile.ToJsonString()),revision },serverTime=now,authority=true };
+        async Task<object> Envelope(int member,JsonObject profile,long revision,DateTimeOffset now,JsonObject receipt=null)
+        {
+            using var cmd=await Command("SELECT Name FROM dbo.FrontendMember WHERE Id=@Member;",null,("@Member",member));
+            var name=await cmd.ExecuteScalarAsync() as string;
+            return new { ok=true, receipt, memberName=string.IsNullOrWhiteSpace(name)?"會員":name,
+                profile=new { payload=DesktopPetDocuments.Project("profile",profile.ToJsonString()),revision },serverTime=now,authority=true };
+        }
         async Task<long> Save(int member,JsonObject p,long revision,DbTransaction tx)
         {
             using var cmd=await Command(revision==0
@@ -58,7 +70,7 @@ namespace YoMi_Frontend.Services
                 p["_economy"]=new JsonObject { ["since"]=since.ToString("O"),["carrySeconds"]=DesktopPetEconomy.Number(p["focus"]?["activeSeconds"])%1800 };
                 revision=await Save(member,p,revision,tx);
             }
-            await tx.CommitAsync(); return Envelope(p,revision,now);
+            await tx.CommitAsync(); return await Envelope(member,p,revision,now);
         }
         public async Task<object> State(int member)
         {
@@ -66,7 +78,7 @@ namespace YoMi_Frontend.Services
             using var tx=await connection.BeginTransactionAsync(IsolationLevel.Serializable);
             var (p,revision)=await Profile(member,tx); var now=await Now(tx);
             if(!Managed(p)) throw new DesktopEconomyConflictException("請先啟用伺服器同步。","bootstrap_required");
-            await tx.CommitAsync(); return Envelope(p,revision,now);
+            await tx.CommitAsync(); return await Envelope(member,p,revision,now);
         }
         static string Canonical(JsonNode node)
         {
@@ -91,7 +103,7 @@ namespace YoMi_Frontend.Services
                 {
                     if(!CryptographicOperations.FixedTimeEquals((byte[])reader.GetValue(0),hash)) throw new DesktopEconomyConflictException("相同操作編號不能用於不同內容。","operation_id_reused");
                     var previous=JsonNode.Parse(reader.GetString(1)) as JsonObject; await reader.DisposeAsync(); await tx.CommitAsync();
-                    return Envelope(p,revision,now,previous);
+                    return await Envelope(member,p,revision,now,previous);
                 }
             DateTimeOffset? start=null,end=null; long seconds=0,keys=0; JsonObject run=null; bool coversFocus=false,coversKeys=false;
             if(type=="focus")
@@ -137,7 +149,7 @@ namespace YoMi_Frontend.Services
             if(type=="game-start") receipt["runId"]=id.ToString("D");
             revision=await Save(member,p,revision,tx);
             using(var insert=await Command("INSERT dbo.YoMiDesktopOperations(FrontendMemberId,OperationId,OperationType,RequestHash,Receipt,CreatedAtUtc,FocusStartedAtUtc,FocusEndedAtUtc) VALUES(@Member,@Id,@Type,@Hash,@Receipt,@Now,@Start,@End);",tx,("@Member",member),("@Id",id),("@Type",type),("@Hash",hash),("@Receipt",receipt.ToJsonString()),("@Now",now.UtcDateTime),("@Start",start?.UtcDateTime),("@End",end?.UtcDateTime))) await insert.ExecuteNonQueryAsync();
-            await tx.CommitAsync(); return Envelope(p,revision,now,receipt);
+            await tx.CommitAsync(); return await Envelope(member,p,revision,now,receipt);
         }
         static DateTimeOffset Min(DateTimeOffset a,DateTimeOffset b)=>a<b?a:b;
     }

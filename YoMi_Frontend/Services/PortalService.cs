@@ -45,7 +45,7 @@ namespace YoMi_Frontend.Services
 
         public Task<List<FrontendPriceItem>> GetPriceItemsAsync(string tab = null)
         {
-            var query = _db.FrontendPriceItem.AsNoTracking();
+            var query = _db.FrontendPriceItem.AsNoTracking().Include(x => x.Options).AsQueryable();
             if (!string.IsNullOrWhiteSpace(tab))
             {
                 query = query.Where(x => x.Tab == tab);
@@ -271,6 +271,9 @@ namespace YoMi_Frontend.Services
         }
 
         public Task<VipStatus> GetVipStatusAsync(int userId) => VipService.GetStatusAsync(_db, userId);
+
+        public Task<List<VipCouponBalance>> GetVipCouponsAsync(int userId) =>
+            new CustomerOrderService(_db).GetCouponsAsync(userId, OrderRules.TaiwanNow);
 
         public async Task AddConsumptionAsync(int userId, decimal amount, string description, string category, int createdBy)
         {
